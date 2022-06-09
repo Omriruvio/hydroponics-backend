@@ -27,6 +27,10 @@
 const express = require('express');
 const app = express();
 const port = 3000;
+const { SID, AUTH_TOKEN } = require('./keys').TWILIO;
+const accountSid = process.env.TWILIO_ACCOUNT_SID || SID;
+const authToken = process.env.TWILIO_AUTH_TOKEN || AUTH_TOKEN;
+const client = require('twilio')(accountSid, authToken);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -37,7 +41,19 @@ app.get('/', (req, res) => {
 });
 
 app.post('/incoming', (req, res) => {
-  console.log(req.body);
+  const hasMediaUrl = req.body['MediaUrl0'] || false;
+  const incomingNumber = req.body.From;
+  if (hasMediaUrl) {
+    client.messages
+      .create({ from: 'whatsapp:+14155238886', to: incomingNumber, body: 'Media item received and is being Hydroponically assessed.' })
+      .then((message) => console.log(message))
+      .catch((err) => console.log(err));
+  } else {
+    client.messages
+      .create({ from: 'whatsapp:+14155238886', to: incomingNumber, body: 'Processing your Hydroponic state. Stay tuned.' })
+      .then((message) => console.log(message))
+      .catch((err) => console.log(err));
+  }
 });
 
 app.listen(port, () => {
