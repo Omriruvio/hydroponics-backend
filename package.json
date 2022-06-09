@@ -2,10 +2,18 @@
   "name": "hydroponics-test",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
+    "dev": "nodemon server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.1",
+    "twilio": "^3.77.2"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.16"
+  }
 }
