@@ -26,7 +26,7 @@
 
 const express = require('express');
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 const { SID, AUTH_TOKEN } = require('./keys').TWILIO;
 const accountSid = process.env.TWILIO_ACCOUNT_SID || SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN || AUTH_TOKEN;
@@ -57,5 +57,5 @@ app.post('/incoming', (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`Example app listening at http://localhost:${port}`);
+  console.log(`Hydroponics app listening at ${port}`);
 });
