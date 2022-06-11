@@ -24,12 +24,14 @@
 //       .then(message => console.log(message.sid))
 //       .done();
 
+require('dotenv').config();
 const express = require('express');
 const app = express();
 const port = process.env.PORT || 3000;
-const { SID, AUTH_TOKEN } = require('./keys').TWILIO;
-const accountSid = process.env.TWILIO_ACCOUNT_SID || SID;
-const authToken = process.env.TWILIO_AUTH_TOKEN || AUTH_TOKEN;
+// const { SID, AUTH_TOKEN } = require('./keys').TWILIO;
+const { SID, AUTH_TOKEN } = process.env;
+const accountSid = SID;
+const authToken = AUTH_TOKEN;
 const client = require('twilio')(accountSid, authToken);
 
 app.use(express.json());
