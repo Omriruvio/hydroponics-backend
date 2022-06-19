@@ -49,7 +49,8 @@ app.post('/incoming', (req, res) => {
     client.messages
       .create({ from: 'whatsapp:+14155238886', to: incomingNumber, body: 'Media item received and is being Hydroponically assessed.' })
       .then((message) => {
-        res.status(200).send({ message: 'Message received.' });
+        res.setHeader('Content-type', 'text/csv');
+        res.status(200).send(JSON.stringify({ message: 'Message received.' }));
         console.log(message);
       })
       .catch((err) => console.log(err));
@@ -57,7 +58,7 @@ app.post('/incoming', (req, res) => {
     client.messages
       .create({ from: 'whatsapp:+14155238886', to: incomingNumber, body: 'Processing your Hydroponic state. Stay tuned.' })
       .then((message) => {
-        res.status(200).send({ message: 'Message received.' });
+        res.status(200).send(JSON.stringify({ message: 'Message received.' }));
         console.log(message);
       })
       .catch((err) => console.log(err));
