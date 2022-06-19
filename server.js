@@ -48,12 +48,18 @@ app.post('/incoming', (req, res) => {
   if (hasMediaUrl) {
     client.messages
       .create({ from: 'whatsapp:+14155238886', to: incomingNumber, body: 'Media item received and is being Hydroponically assessed.' })
-      .then((message) => console.log(message))
+      .then((message) => {
+        res.status(200).send({ message: 'Message received.' });
+        console.log(message);
+      })
       .catch((err) => console.log(err));
   } else {
     client.messages
       .create({ from: 'whatsapp:+14155238886', to: incomingNumber, body: 'Processing your Hydroponic state. Stay tuned.' })
-      .then((message) => console.log(message))
+      .then((message) => {
+        res.status(200).send({ message: 'Message received.' });
+        console.log(message);
+      })
       .catch((err) => console.log(err));
   }
 });
