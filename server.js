@@ -15,14 +15,13 @@ app.use(express.urlencoded({ extended: true }));
 mongoose.connect(MONGODB_URI);
 
 app.get('/', (req, res) => {
-  console.log(req);
-  res.send('Hello World!');
+  res.send('<h1>Hello from Hydroponics!</h1>');
 });
 
 app.use('/', incomingRoute);
 
 app.use((err, req, res, next) => {
-  res.send({ message: err.message || 'Internal server error.' });
+  res.status(err.statusCode || 500).send({ message: err.message || 'Internal server error.' });
 });
 
 app.listen(port, () => {

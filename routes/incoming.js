@@ -2,6 +2,10 @@ const incoming = require('../controllers/incoming');
 
 const router = require('express').Router();
 
-router.post('/incoming', incoming);
+const authMiddleware = (req, res, next) => {
+  next();
+};
+
+router.post('/incoming', authMiddleware, incoming);
 
 module.exports = router;
