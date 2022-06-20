@@ -5,6 +5,7 @@ module.exports = (req, res, next) => {
   if (!req.body.From) throw new Error('Not a recognized message type (whatsapp only route).');
   const hasMediaUrl = req.body['MediaUrl0'] || false;
   const incomingNumber = req.body.From;
+  console.log(req);
   if (hasMediaUrl) {
     client.messages
       .create({ from: 'whatsapp:+14155238886', to: incomingNumber, body: 'Media item received and is being Hydroponically assessed.' })

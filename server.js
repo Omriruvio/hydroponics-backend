@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
+const { errorLogger, requestLogger } = require('./middlewares/logger');
 const app = express();
 const port = process.env.PORT || 3000;
 const { SID, AUTH_TOKEN, MONGODB_URI } = process.env;
@@ -14,19 +15,25 @@ app.use(express.urlencoded({ extended: true }));
 
 mongoose.connect(MONGODB_URI);
 
+app.use(requestLogger);
+
 app.get('/', (req, res) => {
   res.send('<h1>Hello from Hydroponics!</h1>');
 });
 
 app.use('/', incomingRoute);
 
+app.use(errorLogger);
+
 app.use((err, req, res, next) => {
   res.status(err.statusCode || 500).send({ message: err.message || 'Internal server error.' });
 });
 
-app.listen(port, () => {
-  console.log(`Hydroponics app listening at ${port}`);
-});
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(port, () => {
+    console.log(`Hydroponics app listening at ${port}`);
+  });
+}
 
 // const accountSid = 'ACaf9782d3cc4e05574c13a93dc7b3d022';
 // const authToken = '[AuthToken]';
