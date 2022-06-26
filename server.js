@@ -9,6 +9,7 @@ const accountSid = SID;
 const authToken = AUTH_TOKEN;
 const client = require('twilio')(accountSid, authToken);
 const incomingRoute = require('./routes/incoming');
+const userRoute = require('./routes/userrouter');
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -21,7 +22,7 @@ app.get('/', (req, res) => {
   res.send('<h1>Hello from Hydroponics!</h1>');
 });
 
-app.use('/', incomingRoute);
+app.use('/', incomingRoute, userRoute);
 
 app.use(errorLogger);
 

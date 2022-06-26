@@ -1,7 +1,7 @@
-const incoming = require('../controllers/incoming');
+const { handleSignup } = require('../controllers/users');
 const authMiddleware = require('../middlewares/auth');
 const router = require('express').Router();
 
-router.post('/incoming', authMiddleware, incoming);
+router.post('/user', authMiddleware, handleSignup);
 
 module.exports = router;
