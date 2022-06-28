@@ -10,9 +10,11 @@ const authToken = AUTH_TOKEN;
 const client = require('twilio')(accountSid, authToken);
 const incomingRoute = require('./routes/incoming');
 const userRoute = require('./routes/userrouter');
+const cors = require('cors');
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cors());
 
 mongoose.connect(MONGODB_URI);
 

@@ -13,7 +13,7 @@ const handleSignup = (req, res, next) => {
         messageOptIn,
       })
         .then((user) => {
-          res.status(200).send(user);
+          res.status(200).send({ email: user.email, id: user._id });
         })
         .catch(() => next(new Error('User already exists.')));
       // TODO: custom error & status codes
