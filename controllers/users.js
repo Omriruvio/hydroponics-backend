@@ -3,14 +3,17 @@ const User = require('../models/user');
 
 const handleSignup = (req, res, next) => {
   const { email, password, phone, messageOptIn } = req.body;
+  console.log('email', email);
+  console.log(password);
+
   bcrypt
     .hash(password, 10)
     .then((hash) => {
       User.create({
         email,
         password: hash,
-        phoneNumber: phone,
-        messageOptIn,
+        // phoneNumber: phone,
+        // messageOptIn,
       })
         .then((user) => {
           res.status(200).send({ email: user.email, id: user._id });

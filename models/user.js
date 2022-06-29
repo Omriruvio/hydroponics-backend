@@ -2,10 +2,10 @@ const mongoose = require('mongoose');
 const isEmail = require('validator/lib/isEmail');
 
 const userSchema = new mongoose.Schema({
-  phoneNumber: {
-    type: String,
-    unique: true,
-  },
+  // phoneNumber: {
+  //   type: String,
+  //   unique: true,
+  // },
   email: {
     type: String,
     required: true,

@@ -11,7 +11,10 @@ const client = require('twilio')(accountSid, authToken);
 const incomingRoute = require('./routes/incoming');
 const userRoute = require('./routes/userrouter');
 const cors = require('cors');
+const { rateLimiter } = require('./middlewares/ratelimiter.js');
+// todo: add cookie parser
 
+app.use(rateLimiter);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
@@ -29,6 +32,7 @@ app.use('/', incomingRoute, userRoute);
 app.use(errorLogger);
 
 app.use((err, req, res, next) => {
+  console.log(err);
   res.status(err.statusCode || 500).send({ message: err.message || 'Internal server error.' });
 });
 
