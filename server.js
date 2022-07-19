@@ -29,6 +29,10 @@ app.get('/', (req, res) => {
 
 app.use('/', incomingRoute, userRoute);
 
+app.use('*', (req, res) => {
+  res.status(404).send({ message: 'Resource not found' });
+});
+
 app.use(errorLogger);
 
 app.use((err, req, res, next) => {
@@ -41,29 +45,3 @@ if (process.env.NODE_ENV !== 'test') {
     console.log(`Hydroponics app listening at ${port}`);
   });
 }
-
-// const accountSid = 'ACaf9782d3cc4e05574c13a93dc7b3d022';
-// const authToken = '[AuthToken]';
-// const client = require('twilio')(accountSid, authToken);
-
-// client.messages
-//       .create({
-//          body: 'Your CyberGames code is 1238432',
-//          from: 'whatsapp:+14155238886',
-//          to: 'whatsapp:+972587400020'
-//        })
-//       .then(message => console.log(message.sid))
-//       .done();
-
-// const accountSid = 'ACaf9782d3cc4e05574c13a93dc7b3d022';
-// const authToken = '[AuthToken]';
-// const client = require('twilio')(accountSid, authToken);
-
-// client.messages
-//       .create({
-//          body: 'Hello, this is CyberGames, how can we help you?',
-//          from: 'whatsapp:+14155238886',
-//          to: 'whatsapp:+972587400020'
-//        })
-//       .then(message => console.log(message.sid))
-//       .done();

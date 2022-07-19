@@ -24,6 +24,20 @@ const handleSignup = (req, res, next) => {
     .catch(next);
 };
 
+const handleMobileSignup = (req, res, next) => {
+  // todo: figure out a secure way that would not allow for
+  // todo: submitting arbitrary number + email to this endpoint.
+  const { email, phoneNumber } = req.body;
+  console.log('received from mobile: ', email, phoneNumber);
+  User.create({ email, phoneNumber })
+    .then((user) => {
+      console.log('user created: ', user);
+      res.status(200).send({ email: user.email, id: user._id });
+    })
+    .catch(() => next(new Error('User already exists.')));
+  // TODO: custom error & status codes
+};
+
 const handleLogin = (req, res, next) => {
   const { email, password } = req.body;
   User.findOne({ email })
@@ -43,4 +57,31 @@ const handleLogin = (req, res, next) => {
     .catch(next);
 };
 
-module.exports = { handleSignup, handleLogin };
+const handleCropData = (req, res, next) => {
+  const { phoneNumber, messageBody, temperature, humidity, ph } = req.body;
+  // todo: add data parsing for temp/humidity/ph
+  User.findOneAndUpdate(
+    { phoneNumber },
+    {
+      $push: {
+        messageHistory: {
+          dateReceived: new Date(),
+          messageBody,
+          temperature: temperature || null,
+          humidity: humidity || null,
+          ph: ph || null,
+        },
+      },
+    },
+    { new: true }
+  )
+    .orFail(() => next(new Error('User not found!')))
+    .select('messageHistory')
+    .then((history) => {
+      console.log(history);
+      res.status(200).send(history);
+    })
+    .catch(next);
+};
+
+module.exports = { handleSignup, handleLogin, handleMobileSignup, handleCropData };
