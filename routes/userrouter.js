@@ -16,11 +16,12 @@ router.post('/identify', authMiddleware, (req, res) => {
   user.findOne({ phoneNumber }).then((foundUser) => {
     if (!foundUser) {
       console.log('user not found');
-      res.status(406).send({ message: 'User not found.' });
+      // res.status(406).send({ message: 'User not found.' });
+      res.status(204).send();
       return;
     } else {
       console.log('user found');
-      res.status(200).send({ user: foundUser });
+      res.status(202).send({ user: foundUser });
     }
   });
 });
