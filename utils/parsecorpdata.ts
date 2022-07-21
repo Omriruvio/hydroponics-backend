@@ -1,9 +1,4 @@
-interface ParsedData {
-  temperature: number | null;
-  humidity: number | null;
-  ph: number | null;
-  ec: number | null;
-}
+type ParsedData = { [k: string]: number | null };
 
 const dataDictionary = new Map<Array<string>, string>([
   [['temperature', 'temp', 'tmp', 't'], 'temperature'],
@@ -25,13 +20,10 @@ const dataDictionary = new Map<Array<string>, string>([
  */
 
 const parseCropData = (messageBody: string): ParsedData => {
-  const parsed: ParsedData = { temperature: null, humidity: null, ph: null, ec: null };
+  const parsed: ParsedData = {};
   messageBody = messageBody?.toLowerCase().replace(/\s+/, ' ');
-  // for each of possible data strings, look for matches and
-  // their corresponding following number value
   dataDictionary.forEach((key, options) => {
     options.forEach((option) => {
-      // const regexp = new RegExp(`(?<=(?<=\\b|[0-9])${option}(?![a-z]))(.*?)?-?\\d+\\.?\\d*`);
       const regexp = new RegExp(`(?<=(?<=\\b|[0-9])${option}(?![a-z]))(\\s*|\\s?:\\s?)?(?:-?\\d+\\.?\\d*)`);
       const result = messageBody?.match(regexp)?.[0] || null;
       if (result) parsed[key] = parseFloat(result);
