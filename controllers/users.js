@@ -58,8 +58,11 @@ const handleLogin = (req, res, next) => {
 };
 
 const handleCropData = (req, res, next) => {
-  const { phoneNumber, messageBody, temperature, humidity, ph } = req.body;
+  const { phoneNumber, messageBody, temperature, humidity, ph, ec } = req.body;
   // todo: add data parsing for temp/humidity/ph
+  let parsedTemperature, parsedHumidity, parsedPh, parsedEc;
+  // const { parsedTemperature, parsedHumidity, parsedPh, parsedEc } =
+  // require('../utils/parseCropData')(messageBody)
   User.findOneAndUpdate(
     { phoneNumber },
     {
@@ -67,9 +70,10 @@ const handleCropData = (req, res, next) => {
         messageHistory: {
           dateReceived: new Date(),
           messageBody,
-          temperature: temperature || null,
-          humidity: humidity || null,
-          ph: ph || null,
+          temperature: parsedTemperature || temperature || null,
+          humidity: parsedHumidity || humidity || null,
+          ph: parsedPh || ph || null,
+          ec: parsedEc || ec || null,
         },
       },
     },

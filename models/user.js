@@ -30,6 +30,7 @@ const userSchema = new mongoose.Schema({
       temperature: { type: String },
       humidity: { type: String },
       ph: { type: String },
+      ec: { type: String },
       handled: { type: Boolean, default: false },
     },
   ],
