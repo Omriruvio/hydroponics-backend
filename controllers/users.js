@@ -1,5 +1,8 @@
 const bcrypt = require('bcryptjs');
 const User = require('../models/user');
+const parseCropData = require('../utils/parsecorpdata');
+const { SID, AUTH_TOKEN, HYDROPONICS_WA_NUMBER } = process.env;
+const client = require('twilio')(SID, AUTH_TOKEN);
 
 const handleSignup = (req, res, next) => {
   const { email, password, phone, messageOptIn } = req.body;
@@ -58,11 +61,15 @@ const handleLogin = (req, res, next) => {
 };
 
 const handleCropData = (req, res, next) => {
-  const { phoneNumber, messageBody, temperature, humidity, ph, ec } = req.body;
-  // todo: add data parsing for temp/humidity/ph
-  let parsedTemperature, parsedHumidity, parsedPh, parsedEc;
-  // const { parsedTemperature, parsedHumidity, parsedPh, parsedEc } =
-  // require('../utils/parseCropData')(messageBody)
+  const { phoneNumber, messageBody } = req.body;
+  const { temperature, humidity, ph, ec } = parseCropData(messageBody);
+  const responseMessage = `*Recorded data:*\n\nTemperature: *${temperature}*\nHumidity: *${humidity}*\nPH: *${ph}*\nEC: *${ec}*`;
+  const responseMessageOutro = `\n\nData will be available in your personal dashboard.\n*_Have a wonderful growing!_*`;
+  // todo: craft response message:
+  // todo: add strikethrough with Tilde (~string~) in case null parameter
+  // todo: account for numeric data such as ec -> .55 & ph
+  // todo: account for metric vs imperial system (FH / Celsius)
+  // todo: account for all null values
   User.findOneAndUpdate(
     { phoneNumber },
     {
@@ -70,10 +77,10 @@ const handleCropData = (req, res, next) => {
         messageHistory: {
           dateReceived: new Date(),
           messageBody,
-          temperature: parsedTemperature || temperature || null,
-          humidity: parsedHumidity || humidity || null,
-          ph: parsedPh || ph || null,
-          ec: parsedEc || ec || null,
+          temperature,
+          humidity,
+          ph,
+          ec,
         },
       },
     },
@@ -82,8 +89,13 @@ const handleCropData = (req, res, next) => {
     .orFail(() => next(new Error('User not found!')))
     .select('messageHistory')
     .then((history) => {
-      console.log(history);
-      res.status(200).send(history);
+      client.messages
+        .create({ from: HYDROPONICS_WA_NUMBER, to: phoneNumber, body: responseMessage + responseMessageOutro })
+        .then((message) => {
+          res.setHeader('Content-type', 'text/csv');
+          res.status(200).send(JSON.stringify({ message: responseMessage }));
+        })
+        .catch(next);
     })
     .catch(next);
 };
