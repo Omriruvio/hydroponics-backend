@@ -97,4 +97,48 @@ const handleCropData = (req, res, next) => {
     .catch(next);
 };
 
-module.exports = { handleSignup, handleLogin, handleMobileSignup, handleCropData };
+const handleDeleteLast = (req, res, next) => {
+  const { phoneNumber } = req.body;
+  User.updateOne({ phoneNumber }, { $pop: { messageHistory: 1 } })
+    .then((message) => {
+      if (message.modifiedCount === 0) {
+        const responseMessage = 'We have found nothing to delete.';
+        client.messages
+          .create({ from: HYDROPONICS_WA_NUMBER, to: phoneNumber, body: responseMessage })
+          .then((message) => {
+            res.setHeader('Content-type', 'text/csv');
+            res.status(200).send(JSON.stringify({ message: responseMessage }));
+          })
+          .catch(next);
+      } else {
+        const responseMessage = 'Latest data submission has been deleted.';
+        client.messages
+          .create({ from: HYDROPONICS_WA_NUMBER, to: phoneNumber, body: responseMessage })
+          .then((message) => {
+            res.setHeader('Content-type', 'text/csv');
+            res.status(200).send(JSON.stringify({ message: responseMessage }));
+          })
+          .catch(next);
+      }
+    })
+    .catch(next);
+};
+
+const handleHelpRequest = (req, res, next) => {
+  const { phoneNumber } = req.body;
+  const responseMessage =
+    `To submit crop data *respond with the following format:*\n` +
+    `'*_temp_* value *_humidity_* value *_ph_* value *_ec_* value'\n` +
+    `\n*Additional commands:*\n` +
+    `*'help'* - For this reference sheet\n` +
+    `*'delete'* - Remove latest crop data submission`;
+  client.messages
+    .create({ from: HYDROPONICS_WA_NUMBER, to: phoneNumber, body: responseMessage })
+    .then((message) => {
+      res.setHeader('Content-type', 'text/csv');
+      res.status(200).send(JSON.stringify({ message: responseMessage }));
+    })
+    .catch(next);
+};
+
+module.exports = { handleHelpRequest, handleDeleteLast, handleSignup, handleLogin, handleMobileSignup, handleCropData };
