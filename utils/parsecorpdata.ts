@@ -1,4 +1,4 @@
-type ParsedData = { [k: string]: number | null };
+export type ParsedData = { [k: string]: number | null };
 
 const dataDictionary = new Map<Array<string>, string>([
   [['temperature', 'temp', 'tmp', 't'], 'temperature'],

@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const User = require('../models/user');
-const parseCropData = require('../utils/parsecorpdata');
+const parseCropData = require('../utils/parsecorpdata.js');
+const getResponseMessage = require('../utils/response-text');
 const { SID, AUTH_TOKEN, HYDROPONICS_WA_NUMBER } = process.env;
 const client = require('twilio')(SID, AUTH_TOKEN);
 
@@ -63,13 +64,9 @@ const handleLogin = (req, res, next) => {
 const handleCropData = (req, res, next) => {
   const { phoneNumber, messageBody } = req.body;
   const { temperature, humidity, ph, ec } = parseCropData(messageBody);
-  const responseMessage = `*Recorded data:*\n\nTemperature: *${temperature}*\nHumidity: *${humidity}*\nPH: *${ph}*\nEC: *${ec}*`;
-  const responseMessageOutro = `\n\nData will be available in your personal dashboard.\n*_Have a wonderful growing!_*`;
-  // todo: craft response message:
-  // todo: add strikethrough with Tilde (~string~) in case null parameter
+  const responseMessage = getResponseMessage({ temperature, humidity, ph, ec });
   // todo: account for numeric data such as ec -> .55 & ph
   // todo: account for metric vs imperial system (FH / Celsius)
-  // todo: account for all null values
   User.findOneAndUpdate(
     { phoneNumber },
     {
@@ -90,7 +87,7 @@ const handleCropData = (req, res, next) => {
     .select('messageHistory')
     .then((history) => {
       client.messages
-        .create({ from: HYDROPONICS_WA_NUMBER, to: phoneNumber, body: responseMessage + responseMessageOutro })
+        .create({ from: HYDROPONICS_WA_NUMBER, to: phoneNumber, body: responseMessage })
         .then((message) => {
           res.setHeader('Content-type', 'text/csv');
           res.status(200).send(JSON.stringify({ message: responseMessage }));
