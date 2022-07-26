@@ -1,5 +1,6 @@
 const { handleHelpRequest, handleSignup, handleLogin, handleMobileSignup, handleCropData, handleDeleteLast } = require('../controllers/users');
 const authMiddleware = require('../middlewares/auth');
+const handleIfImage = require('../middlewares/check-for-image');
 const user = require('../models/user');
 const router = require('express').Router();
 const { SID, AUTH_TOKEN, HYDROPONICS_WA_NUMBER } = process.env;
@@ -28,7 +29,7 @@ router.post('/identify', authMiddleware, (req, res, next) => {
 });
 router.post('/delete-last', handleDeleteLast);
 
-router.post('/cropdata', handleCropData);
+router.post('/cropdata', handleIfImage, handleCropData);
 
 router.post('/mobilesignup', handleMobileSignup);
 

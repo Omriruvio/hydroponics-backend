@@ -62,9 +62,10 @@ const handleLogin = (req, res, next) => {
 };
 
 const handleCropData = (req, res, next) => {
-  const { phoneNumber, messageBody } = req.body;
+  const { phoneNumber, messageBody, imageUrl } = req.body;
   const { temperature, humidity, ph, ec } = parseCropData(messageBody);
-  const responseMessage = getResponseMessage({ temperature, humidity, ph, ec });
+  // todo: if imageUrl exists in req.body -> confirmation message
+  const responseMessage = imageUrl ? 'Image has been stored.' : getResponseMessage({ temperature, humidity, ph, ec });
   // todo: account for numeric data such as ec -> .55 & ph
   // todo: account for metric vs imperial system (FH / Celsius)
   User.findOneAndUpdate(
@@ -78,6 +79,7 @@ const handleCropData = (req, res, next) => {
           humidity,
           ph,
           ec,
+          imageUrl,
         },
       },
     },

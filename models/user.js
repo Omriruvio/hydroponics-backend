@@ -25,6 +25,7 @@ const userSchema = new mongoose.Schema({
   },
   messageHistory: [
     {
+      imageUrl: String,
       dateReceived: { type: Date, default: Date.now() },
       messageBody: { type: String, required: true },
       temperature: { type: String },
