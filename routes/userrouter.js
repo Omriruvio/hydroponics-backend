@@ -1,7 +1,7 @@
 const { handleHelpRequest, handleSignup, handleLogin, handleMobileSignup, handleCropData, handleDeleteLast } = require('../controllers/users');
 const authMiddleware = require('../middlewares/auth');
 const handleIfImage = require('../middlewares/check-for-image');
-const user = require('../models/user');
+const User = require('../models/user');
 const router = require('express').Router();
 const { SID, AUTH_TOKEN, HYDROPONICS_WA_NUMBER } = process.env;
 const client = require('twilio')(SID, AUTH_TOKEN);
@@ -15,8 +15,7 @@ router.post('/identify', authMiddleware, (req, res, next) => {
   // if no match - should response with a 400 unauthorized to trigger
   // prompt for signup process
   const { phoneNumber } = req.body;
-  user
-    .findOne({ phoneNumber })
+  User.findOne({ phoneNumber })
     .then((foundUser) => {
       if (!foundUser) {
         res.status(204).send();
@@ -34,5 +33,15 @@ router.post('/cropdata', handleIfImage, handleCropData);
 router.post('/mobilesignup', handleMobileSignup);
 
 router.post('/help', handleHelpRequest);
+
+router.get('/history/:days', (req, res, next) => {
+  //expects phoneNumber in the format of 'whatsapp:+972xxxxxxxxx'
+  const { phoneNumber } = req.body;
+  const dayCount = req.params.days;
+  const toDate = Date.now();
+  User.getMessageHistoryFrom(phoneNumber, toDate, dayCount)
+    .then((history) => res.send(history))
+    .catch(next);
+});
 
 module.exports = router;
