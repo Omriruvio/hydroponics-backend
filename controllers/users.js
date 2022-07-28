@@ -2,30 +2,45 @@ const bcrypt = require('bcryptjs');
 const User = require('../models/user');
 const parseCropData = require('../utils/parsecorpdata.js');
 const getResponseMessage = require('../utils/response-text');
-const { SID, AUTH_TOKEN, HYDROPONICS_WA_NUMBER } = process.env;
+const { SID, AUTH_TOKEN, HYDROPONICS_WA_NUMBER, NODE_ENV } = process.env;
 const client = require('twilio')(SID, AUTH_TOKEN);
 
 const handleSignup = (req, res, next) => {
-  const { email, password, phone, messageOptIn } = req.body;
-  console.log('email', email);
-  console.log(password);
+  const { email, password, phoneNumber, messageOptIn } = req.body;
 
-  bcrypt
-    .hash(password, 10)
-    .then((hash) => {
-      User.create({
-        email,
-        password: hash,
-        // phoneNumber: phone,
-        // messageOptIn,
-      })
-        .then((user) => {
-          res.status(200).send({ email: user.email, id: user._id });
-        })
-        .catch(() => next(new Error('User already exists.')));
-      // TODO: custom error & status codes
-    })
-    .catch(next);
+  User.create({ email, phoneNumber })
+    .then((user) => console.log(user))
+    .catch((err) => {
+      console.log(err.code);
+      if (err.code === 11000) {
+        if (NODE_ENV === 'DEV') {
+          res.status(409).send({ message: 'User already exists.' });
+        } else {
+          res.status(400).send({ message: 'Error creating user.' });
+        }
+      }
+      next(err);
+    });
+
+  // console.log('email', email);
+  // console.log(password);
+
+  // bcrypt
+  //   .hash(password, 10)
+  //   .then((hash) => {
+  //     User.create({
+  //       email,
+  //       password: hash,
+  //       // phoneNumber: phone,
+  //       // messageOptIn,
+  //     })
+  //       .then((user) => {
+  //         res.status(200).send({ email: user.email, id: user._id });
+  //       })
+  //       .catch(() => next(new Error('User already exists.')));
+  //     // TODO: custom error & status codes
+  //   })
+  //   .catch(next);
 };
 
 const handleMobileSignup = (req, res, next) => {
@@ -33,6 +48,7 @@ const handleMobileSignup = (req, res, next) => {
   // todo: submitting arbitrary number + email to this endpoint.
   const { email, phoneNumber } = req.body;
   console.log('received from mobile: ', email, phoneNumber);
+  // todo: consider removing whatsapp: format from phone number
   User.create({ email, phoneNumber })
     .then((user) => {
       console.log('user created: ', user);
@@ -43,20 +59,27 @@ const handleMobileSignup = (req, res, next) => {
 };
 
 const handleLogin = (req, res, next) => {
-  const { email, password } = req.body;
+  const { email, phoneNumber } = req.body;
   User.findOne({ email })
-    .select('password')
     .orFail((err) => next(err))
     .then((user) => {
-      bcrypt
-        .compare(password, user.password)
-        .then((match) => {
-          if (match) res.send({ id: user._id });
-          else throw new Error('Access denied.');
-          // TODO: custom error & status codes
-        })
-        .catch((err) => next(new Error('Access denied.')));
-      // TODO: custom error & status codes
+      // todo: consider adjusting phone number to whatsapp:+XXXYYYYYYY format
+      // todo: or adjust db to store phone numbers without whatsap format
+      console.log(String(user.phoneNumber).endsWith(String(+phoneNumber)));
+      if (String(user.phoneNumber).endsWith(String(+phoneNumber))) {
+        res.send({ id: user._id });
+      } else {
+        res.status(400).send({ message: 'Incorrect credentials.' });
+      }
+      // bcrypt
+      //   .compare(password, user.password)
+      //   .then((match) => {
+      //     if (match) res.send({ id: user._id });
+      //     else throw new Error('Access denied.');
+      //     // TODO: custom error & status codes
+      //   })
+      //   .catch(next);
+      // // TODO: custom error & status codes
     })
     .catch(next);
 };

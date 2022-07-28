@@ -47,7 +47,7 @@ const userSchema = new mongoose.Schema({
  * @param {string} phoneNumber string representing user phone number 'e.g. whatsapp:+xxxxxxxxx'
  * @param {Date} toDate Start date from which the returned data will be matched
  * @param {number} dayOffset Optional day offset, useful for passing in current date with amount of days to go backwards
- * @returns {Promise} Promisified query results
+ * @returns {Array} Array containing query results
  */
 userSchema.statics.getMessageHistoryFrom = function (phoneNumber, toDate, dayOffset) {
   const fromDate = dayOffset ? new Date(toDate - dayOffset * 24 * 60 * 60 * 1000) : new Date(toDate);
@@ -59,6 +59,7 @@ userSchema.statics.getMessageHistoryFrom = function (phoneNumber, toDate, dayOff
   })
     .select('messageHistory')
     .then((results) => {
+      // todo: add filter based on mongodb queryto get required dates
       return results?.messageHistory.filter((message) => message.dateReceived > fromDate) || [];
     });
 };
