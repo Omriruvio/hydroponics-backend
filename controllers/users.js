@@ -65,7 +65,6 @@ const handleLogin = (req, res, next) => {
     .then((user) => {
       // todo: consider adjusting phone number to whatsapp:+XXXYYYYYYY format
       // todo: or adjust db to store phone numbers without whatsap format
-      console.log(String(user.phoneNumber).endsWith(String(+phoneNumber)));
       if (String(user.phoneNumber).endsWith(String(+phoneNumber))) {
         res.send({ id: user._id });
       } else {

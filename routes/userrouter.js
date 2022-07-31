@@ -34,13 +34,16 @@ router.post('/mobilesignup', handleMobileSignup);
 
 router.post('/help', handleHelpRequest);
 
-router.get('/history/:days', (req, res, next) => {
+router.post('/history/:days', (req, res, next) => {
   //expects phoneNumber in the format of 'whatsapp:+972xxxxxxxxx'
   const { phoneNumber } = req.body;
+  const whatsappConvertedNumber = `whatsapp:+972${+phoneNumber}`;
   const dayCount = req.params.days;
   const toDate = Date.now();
-  User.getMessageHistoryFrom(phoneNumber, toDate, dayCount)
-    .then((history) => res.send(history))
+  User.getMessageHistoryFrom(whatsappConvertedNumber, toDate, dayCount)
+    .then((history) => {
+      res.send(history);
+    })
     .catch(next);
 });
 
