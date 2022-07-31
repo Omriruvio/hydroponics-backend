@@ -2,6 +2,9 @@
   "name": "hydroponics-test",
   "version": "1.0.0",
   "description": "",
+  "engines": {
+    "node": "18.4.x"
+  },
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
