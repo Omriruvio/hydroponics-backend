@@ -21,6 +21,7 @@ router.post('/identify', authMiddleware, (req, res, next) => {
         res.status(204).send();
         return;
       } else {
+        User.setLastInteraction(phoneNumber);
         res.status(202).send({ user: foundUser });
       }
     })

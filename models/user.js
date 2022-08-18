@@ -23,6 +23,17 @@ const userSchema = new mongoose.Schema({
     required: true,
     default: false,
   },
+  receiveReminders: {
+    type: Boolean,
+    required: true,
+    default: false,
+  },
+  lastInteraction: {
+    type: Date,
+  },
+  lastReceivedPush: {
+    type: Date,
+  },
   messageHistory: [
     {
       imageUrl: String,
@@ -62,6 +73,19 @@ userSchema.statics.getMessageHistoryFrom = function (phoneNumber, toDate, dayOff
       // todo: add filter based on mongodb queryto get required dates
       return results?.messageHistory.filter((message) => message.dateReceived > fromDate) || [];
     });
+};
+
+/**
+ *
+ * @param {*} phoneNumber string representing user phone number 'e.g. whatsapp:+xxxxxxxxx'
+ * @returns Updated user document
+ */
+userSchema.statics.setLastInteraction = function (phoneNumber) {
+  // prettier-ignore
+  return this.findOneAndUpdate(
+    { phoneNumber },
+    { lastInteraction: Date.now() },
+    { upsert: true, new: true });
 };
 
 module.exports = mongoose.model('user', userSchema);

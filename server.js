@@ -4,14 +4,13 @@ const mongoose = require('mongoose');
 const { errorLogger, requestLogger } = require('./middlewares/logger');
 const app = express();
 const port = process.env.PORT || 3000;
-const { SID, AUTH_TOKEN, MONGODB_URI } = process.env;
-const accountSid = SID;
-const authToken = AUTH_TOKEN;
-const client = require('twilio')(accountSid, authToken);
+const { MONGODB_URI } = process.env;
 const incomingRoute = require('./routes/incoming');
 const userRoute = require('./routes/userrouter');
 const cors = require('cors');
 const { rateLimiter } = require('./middlewares/ratelimiter.js');
+const { scheduler, pollForPushNotification } = require('./utils/tasks/poll-inactive-users');
+
 // todo: add cookie parser
 
 app.use(rateLimiter);
@@ -39,6 +38,9 @@ app.use((err, req, res, next) => {
   console.log(err);
   res.status(err.statusCode || 500).send({ message: err.message || 'Internal server error.' });
 });
+
+// schedules push notification to inactive users
+scheduler.addSimpleIntervalJob(pollForPushNotification);
 
 if (process.env.NODE_ENV !== 'test') {
   app.listen(port, () => {
