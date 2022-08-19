@@ -1,4 +1,13 @@
-const { handleHelpRequest, handleSignup, handleLogin, handleMobileSignup, handleCropData, handleDeleteLast } = require('../controllers/users');
+const {
+  handleHelpRequest,
+  handleSignup,
+  handleLogin,
+  handleMobileSignup,
+  handleCropData,
+  handleDeleteLast,
+  handleTwilioAuth,
+  handleHistoryRequest,
+} = require('../controllers/users');
 const authMiddleware = require('../middlewares/auth');
 const handleIfImage = require('../middlewares/check-for-image');
 const User = require('../models/user');
@@ -9,43 +18,15 @@ const client = require('twilio')(SID, AUTH_TOKEN);
 router.post('/register', handleSignup);
 router.post('/login', handleLogin);
 // incoming request from twilio flow authentication process
-router.post('/identify', authMiddleware, (req, res, next) => {
-  // receives body.phoneNumber
-  // if match - should respond with 202 for processing incoming crop data
-  // if no match - should response with a 400 unauthorized to trigger
-  // prompt for signup process
-  const { phoneNumber } = req.body;
-  User.findOne({ phoneNumber })
-    .then((foundUser) => {
-      if (!foundUser) {
-        res.status(204).send();
-        return;
-      } else {
-        User.setLastInteraction(phoneNumber);
-        res.status(202).send({ user: foundUser });
-      }
-    })
-    .catch(next);
-});
-router.post('/delete-last', handleDeleteLast);
+router.post('/identify', authMiddleware, handleTwilioAuth);
 
 router.post('/cropdata', handleIfImage, handleCropData);
+router.post('/delete-last', handleDeleteLast);
 
 router.post('/mobilesignup', handleMobileSignup);
 
 router.post('/help', handleHelpRequest);
 
-router.post('/history/:days', (req, res, next) => {
-  //expects phoneNumber in the format of 'whatsapp:+972xxxxxxxxx'
-  const { phoneNumber } = req.body;
-  const whatsappConvertedNumber = `whatsapp:+972${+phoneNumber}`;
-  const dayCount = req.params.days;
-  const toDate = Date.now();
-  User.getMessageHistoryFrom(whatsappConvertedNumber, toDate, dayCount)
-    .then((history) => {
-      res.send(history);
-    })
-    .catch(next);
-});
+router.post('/history/:days', handleHistoryRequest);
 
 module.exports = router;

@@ -1,4 +1,5 @@
 const bcrypt = require('bcryptjs');
+const { DEFAULT_HELP_MESSAGE } = require('../config');
 const User = require('../models/user');
 const parseCropData = require('../utils/parsecorpdata.js');
 const getResponseMessage = require('../utils/response-text');
@@ -49,11 +50,9 @@ const handleMobileSignup = (req, res, next) => {
   // todo: figure out a secure way that would not allow for
   // todo: submitting arbitrary number + email to this endpoint.
   const { email, phoneNumber } = req.body;
-  console.log('received from mobile: ', email, phoneNumber);
   // todo: consider removing whatsapp: format from phone number
   User.create({ email, phoneNumber })
     .then((user) => {
-      console.log('user created: ', user);
       res.status(200).send({ email: user.email, id: user._id });
     })
     .catch(() => next(new Error('User already exists.')));
@@ -62,13 +61,14 @@ const handleMobileSignup = (req, res, next) => {
 
 const handleLogin = (req, res, next) => {
   const { email, phoneNumber } = req.body;
-  console.log(email, phoneNumber);
   User.findOne({ email })
-    .orFail((err) => next(err))
+    .orFail((err) => {
+      throw new Error('User not found');
+    })
     .then((user) => {
       // todo: consider adjusting phone number to whatsapp:+XXXYYYYYYY format
       // todo: or adjust db to store phone numbers without whatsap format
-      if (String(user.phoneNumber).endsWith(phoneNumber)) {
+      if (String(user.phoneNumber).endsWith(String(+phoneNumber))) {
         res.send({ id: user._id });
       } else {
         res.status(400).send({ message: 'Incorrect credentials.' });
@@ -82,6 +82,32 @@ const handleLogin = (req, res, next) => {
       //   })
       //   .catch(next);
       // // TODO: custom error & status codes
+    })
+    .catch((err) => {
+      if (err.message === 'User not found') {
+        res.status(400).send({ message: 'Incorrect credentials.' });
+      } else {
+        next(err);
+      }
+    });
+};
+
+const handleTwilioAuth = (req, res, next) => {
+  // receives body.phoneNumber
+  // if match - should respond with 202 for processing incoming crop data
+  // if no match - should response with a 204 no content to trigger
+  // Warning: Status codes are corresponding to twilio hooks do not change without proper care.
+  // prompt for signup process
+  const { phoneNumber } = req.body;
+  User.findOne({ phoneNumber })
+    .then((foundUser) => {
+      if (!foundUser) {
+        res.status(204).send();
+        return;
+      } else {
+        User.setLastInteraction(phoneNumber);
+        res.status(202).send({ user: foundUser });
+      }
     })
     .catch(next);
 };
@@ -113,8 +139,16 @@ const handleCropData = (req, res, next) => {
     .orFail(() => next(new Error('User not found!')))
     .select('messageHistory')
     .then((history) => {
+      if (NODE_ENV === 'test') {
+        res.send({ status: 'ok', message: 'Test crop data processed.' });
+        return;
+      }
       client.messages
-        .create({ from: HYDROPONICS_WA_NUMBER, to: phoneNumber, body: responseMessage })
+        .create({
+          from: HYDROPONICS_WA_NUMBER,
+          to: phoneNumber,
+          body: responseMessage,
+        })
         .then((message) => {
           res.setHeader('Content-type', 'text/csv');
           res.status(200).send(JSON.stringify({ message: responseMessage }));
@@ -128,6 +162,10 @@ const handleDeleteLast = (req, res, next) => {
   const { phoneNumber } = req.body;
   User.updateOne({ phoneNumber }, { $pop: { messageHistory: 1 } })
     .then((message) => {
+      if (NODE_ENV === 'test') {
+        res.send({ status: 'ok', message: 'Delete request received.' });
+        return;
+      }
       if (message.modifiedCount === 0) {
         const responseMessage = 'We have found nothing to delete.';
         client.messages
@@ -153,12 +191,11 @@ const handleDeleteLast = (req, res, next) => {
 
 const handleHelpRequest = (req, res, next) => {
   const { phoneNumber } = req.body;
-  const responseMessage =
-    `To submit crop data *respond with the following format:*\n` +
-    `'*_temp_* value *_humidity_* value *_ph_* value *_ec_* value'\n` +
-    `\n*Additional commands:*\n` +
-    `*'help'* - For this reference sheet\n` +
-    `*'delete'* - Remove latest crop data submission`;
+  const responseMessage = DEFAULT_HELP_MESSAGE;
+  if (NODE_ENV === 'test') {
+    res.send({ status: 'ok', message: DEFAULT_HELP_MESSAGE });
+    return;
+  }
   client.messages
     .create({ from: HYDROPONICS_WA_NUMBER, to: phoneNumber, body: responseMessage })
     .then((message) => {
@@ -168,4 +205,27 @@ const handleHelpRequest = (req, res, next) => {
     .catch(next);
 };
 
-module.exports = { handleHelpRequest, handleDeleteLast, handleSignup, handleLogin, handleMobileSignup, handleCropData };
+const handleHistoryRequest = (req, res, next) => {
+  //expects phoneNumber in the format of 'whatsapp:+972xxxxxxxxx'
+  const { phoneNumber } = req.body;
+  const isWhatsappNumber = phoneNumber.startsWith('whatsapp:');
+  const whatsappConvertedNumber = isWhatsappNumber ? phoneNumber : `whatsapp:+972${String(+phoneNumber)}`;
+  const dayCount = req.params.days;
+  const toDate = new Date();
+  User.getMessageHistoryFrom(whatsappConvertedNumber, toDate, dayCount)
+    .then((history) => {
+      res.send(history);
+    })
+    .catch(next);
+};
+
+module.exports = {
+  handleHistoryRequest,
+  handleTwilioAuth,
+  handleHelpRequest,
+  handleDeleteLast,
+  handleSignup,
+  handleLogin,
+  handleMobileSignup,
+  handleCropData,
+};

@@ -3,6 +3,4 @@ keys
 .env
 logs
 *.log
-*.test
-*.test.*
 coverage

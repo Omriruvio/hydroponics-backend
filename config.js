@@ -14,3 +14,10 @@ module.exports.PUSH_MIN_DELAY_DAYS = 7;
 module.exports.PUSH_MIN_DELAY_PERIOD_TEXT = 'week';
 
 module.exports.ERROR_LOG_PATH = '/logs/error.log';
+
+module.exports.DEFAULT_HELP_MESSAGE =
+  `To submit crop data *respond with the following format:*\n` +
+  `'*_temp_* value *_humidity_* value *_ph_* value *_ec_* value'\n` +
+  `\n*Additional commands:*\n` +
+  `*'help'* - For this reference sheet\n` +
+  `*'delete'* - Remove latest crop data submission`;
