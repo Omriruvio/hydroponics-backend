@@ -49,9 +49,9 @@ const handleSignup = (req, res, next) => {
 const handleMobileSignup = (req, res, next) => {
   // todo: figure out a secure way that would not allow for
   // todo: submitting arbitrary number + email to this endpoint.
-  const { email, phoneNumber } = req.body;
+  const { email, phoneNumber, whatsappName } = req.body;
   // todo: consider removing whatsapp: format from phone number
-  User.create({ email, phoneNumber })
+  User.create({ email, phoneNumber, username: whatsappName })
     .then((user) => {
       res.status(200).send({ email: user.email, id: user._id });
     })

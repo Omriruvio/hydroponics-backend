@@ -20,11 +20,11 @@ const task = new AsyncTask(
     // todo: consider increasing push interval by applying 7 days * pushNotificationsSent + 1
     // todo: this will increase the interval of pushing each time
     return User.find({}).then((users) => {
-      const pushMessage = getFormattedPushMessage();
       try {
-        getNumbersToPush(users).forEach((phoneNumber) => {
+        getNumbersToPush(users).forEach(({ phoneNumber, username }) => {
           // send push notification
           console.log(phoneNumber);
+          const pushMessage = getFormattedPushMessage(username);
           client.messages.create({ from: HYDROPONICS_WA_NUMBER, to: phoneNumber, body: pushMessage }).then((message) => {
             console.log('Message sent.');
             User.findOneAndUpdate({ phoneNumber }, { lastReceivedPush: new Date() }, { new: true, upsert: true }).then((user) => {

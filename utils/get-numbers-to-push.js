@@ -9,9 +9,9 @@ const { PUSH_MIN_DELAY_DAYS } = require('../config');
 const { getDaysBetween } = require('./get-days-between');
 
 /**
- * Receives an array of user documents and returns an array of phone numbers to push-notify
- * @param {Array<{phoneNumber: String, receiveReminders: Boolean, lastInteraction: Date, lastReceivedPush: Date, messageHistory: Array<{dateReceived: Date}>}>} users
- * @returns {String[]} Array of phone numbers to push-notify
+ * Receives an array of user documents and returns an array of usernames & numbers to push-notify
+ * @param {Array<{username: String, phoneNumber: String, receiveReminders: Boolean, lastInteraction: Date, lastReceivedPush: Date, messageHistory: Array<{dateReceived: Date}>}>} users
+ * @returns {Array<{phoneNumber: String, username: String}>} Array of phone numbers to push-notify
  */
 module.exports.getNumbersToPush = (users) => {
   const now = new Date();
@@ -27,7 +27,7 @@ module.exports.getNumbersToPush = (users) => {
       isInactive = getDaysBetween(lastSentMessageTime, now) >= PUSH_MIN_DELAY_DAYS;
     }
     if (acceptsReminders && delayHasPassed && isInactive) {
-      numbersToNotify.push(user.phoneNumber);
+      numbersToNotify.push({ phoneNumber: user.phoneNumber, username: user.username || 'user' });
     }
     return numbersToNotify;
   }, []);
