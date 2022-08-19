@@ -10,8 +10,7 @@ const handleSignup = (req, res, next) => {
 
   User.create({ email, phoneNumber })
     .then((user) => {
-      console.log(user);
-      res.send({ message: 'User created successfully.' });
+      res.status(201).send({ message: 'User created successfully.' });
     })
     .catch((err) => {
       console.log(err.code);
@@ -63,12 +62,13 @@ const handleMobileSignup = (req, res, next) => {
 
 const handleLogin = (req, res, next) => {
   const { email, phoneNumber } = req.body;
+  console.log(email, phoneNumber);
   User.findOne({ email })
     .orFail((err) => next(err))
     .then((user) => {
       // todo: consider adjusting phone number to whatsapp:+XXXYYYYYYY format
       // todo: or adjust db to store phone numbers without whatsap format
-      if (String(user.phoneNumber).endsWith(String(+phoneNumber))) {
+      if (String(user.phoneNumber).endsWith(phoneNumber)) {
         res.send({ id: user._id });
       } else {
         res.status(400).send({ message: 'Incorrect credentials.' });
