@@ -8,7 +8,7 @@ const { SID, AUTH_TOKEN, HYDROPONICS_WA_NUMBER, NODE_ENV } = process.env;
 const client = require('twilio')(SID, AUTH_TOKEN);
 
 // schedules interval for requesting periodical data
-scheduler = new ToadScheduler();
+const scheduler = new ToadScheduler();
 const task = new AsyncTask(
   'simple task',
   () => {

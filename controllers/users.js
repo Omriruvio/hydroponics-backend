@@ -9,7 +9,10 @@ const handleSignup = (req, res, next) => {
   const { email, password, phoneNumber, messageOptIn } = req.body;
 
   User.create({ email, phoneNumber })
-    .then((user) => console.log(user))
+    .then((user) => {
+      console.log(user);
+      res.send({ message: 'User created successfully.' });
+    })
     .catch((err) => {
       console.log(err.code);
       if (err.code === 11000) {

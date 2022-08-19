@@ -39,11 +39,12 @@ app.use((err, req, res, next) => {
   res.status(err.statusCode || 500).send({ message: err.message || 'Internal server error.' });
 });
 
-// schedules push notification to inactive users
-scheduler.addSimpleIntervalJob(pollForPushNotification);
-
 if (process.env.NODE_ENV !== 'test') {
+  // schedules push notification to inactive users
+  scheduler.addSimpleIntervalJob(pollForPushNotification);
   app.listen(port, () => {
     console.log(`Hydroponics app listening at ${port}`);
   });
 }
+
+module.exports = app;
