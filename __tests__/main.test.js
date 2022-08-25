@@ -6,6 +6,7 @@ const { DEFAULT_HELP_MESSAGE } = require('../config.js');
 const request = supertest(app);
 
 const mockUser = {
+  username: 'mock-user',
   phoneNumber: 'whatsapp:+972587411121',
   email: 'test-user@gmail.com',
   messageOptIn: false,
@@ -24,6 +25,8 @@ const mockUser = {
   lastReceivedPush: '2022-08-18T14:11:13.084Z',
 };
 const mobileMockUser = {
+  username: 'mobile-mock-user',
+  whatsappName: 'mobile-mock-user',
   phoneNumber: 'whatsapp:+972587411122',
   email: 'test-user-mobile@gmail.com',
   messageOptIn: false,
@@ -133,7 +136,7 @@ describe('Testing endpoints', () => {
   });
 
   it('Should respond for message history (web route - plain phone number w/o prefix)', async () => {
-    const response = await request.post('/history/1').send({ ...mockUser, phoneNumber: '0587411121' });
+    const response = await request.get(`/history/0587411121/1`).send({ ...mockUser, phoneNumber: '0587411121' });
     expect(response.body.length).toBe(1);
   });
 

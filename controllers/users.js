@@ -7,9 +7,9 @@ const { SID, AUTH_TOKEN, HYDROPONICS_WA_NUMBER, NODE_ENV } = process.env;
 const client = require('twilio')(SID, AUTH_TOKEN);
 
 const handleSignup = (req, res, next) => {
-  const { email, password, phoneNumber, messageOptIn } = req.body;
+  const { email, password, phoneNumber, messageOptIn, username } = req.body;
 
-  User.create({ email, phoneNumber })
+  User.create({ email, phoneNumber, username })
     .then((user) => {
       res.status(201).send({ message: 'User created successfully.' });
     })
@@ -47,8 +47,6 @@ const handleSignup = (req, res, next) => {
 };
 
 const handleMobileSignup = (req, res, next) => {
-  // todo: figure out a secure way that would not allow for
-  // todo: submitting arbitrary number + email to this endpoint.
   const { email, phoneNumber, whatsappName } = req.body;
   // todo: consider removing whatsapp: format from phone number
   User.create({ email, phoneNumber, username: whatsappName })
@@ -207,7 +205,7 @@ const handleHelpRequest = (req, res, next) => {
 
 const handleHistoryRequest = (req, res, next) => {
   //expects phoneNumber in the format of 'whatsapp:+972xxxxxxxxx'
-  const { phoneNumber } = req.body;
+  const phoneNumber = req.params.phone;
   const isWhatsappNumber = phoneNumber.startsWith('whatsapp:');
   const whatsappConvertedNumber = isWhatsappNumber ? phoneNumber : `whatsapp:+972${String(+phoneNumber)}`;
   const dayCount = req.params.days;

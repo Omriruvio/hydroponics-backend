@@ -27,6 +27,6 @@ router.post('/mobilesignup', handleMobileSignup);
 
 router.post('/help', handleHelpRequest);
 
-router.post('/history/:days', handleHistoryRequest);
+router.get('/history/:phone/:days', handleHistoryRequest);
 
 module.exports = router;
