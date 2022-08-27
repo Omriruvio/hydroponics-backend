@@ -1,6 +1,7 @@
 node_modules
 keys
 .env
+.inject.js
 logs
 *.log
 coverage
