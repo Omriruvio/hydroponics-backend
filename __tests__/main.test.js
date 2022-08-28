@@ -59,6 +59,7 @@ let db;
 let user;
 let mainCollection;
 let superCollection;
+let mockSupervisorId;
 
 beforeAll(async () => {
   connection = await MongoClient.connect(process.env.MONGODB_URI, {
@@ -92,6 +93,7 @@ describe('Testing supervisor collection', () => {
   it('should insert a doc with a mock supervisor', async () => {
     const insertedUser = await superCollection.findOne({ phoneNumber: `whatsapp:+972${+mockSupervisor.phoneNumber}` });
     expect(insertedUser).toEqual({ ...insertedUser, phoneNumber: `whatsapp:+972${+mockSupervisor.phoneNumber}` });
+    mockSupervisorId = insertedUser._id;
   });
 });
 
@@ -162,6 +164,17 @@ describe('Testing endpoints', () => {
   it('Should respond for message history (web route - plain phone number w/o prefix)', async () => {
     const response = await request.get(`/history/0587411121/1`).send({ ...mockUser, phoneNumber: '0587411121' });
     expect(response.body.length).toBe(1);
+  });
+
+  it('Should add a grower to a supervisor', async () => {
+    const response = await request.put('/super/add-grower').send({ _id: mockSupervisorId, phoneNumber: mockUser.phoneNumber });
+    expect(response.status).toBe(204);
+  });
+
+  it("Should retrieve list of supervisors' growers", async () => {
+    const response = await request.get(`/super/growers`).send({ email: mockSupervisor.email });
+    expect(response.body.users.some((user) => user.email === mockUser.email)).toBeTruthy();
+    expect(response.status).toBe(200);
   });
 
   it('Should successfully delete last crop data message', async () => {
