@@ -11,7 +11,7 @@
     "dev": "nodemon server.js",
     "test": "jest",
     "preinstall": "npx npm-force-resolutions",
-    "addsupervisor": "node ./utils/add-supervisor.js"
+    "addsupervisor": "node ./utils/add-supervisor-prompt.js"
   },
   "author": "",
   "license": "ISC",
@@ -23,6 +23,7 @@
     "express": "^4.18.1",
     "express-rate-limit": "^6.4.0",
     "express-winston": "^4.2.0",
+    "jsonwebtoken": "^8.5.1",
     "moment": "^2.29.4",
     "mongoose": "^6.4.0",
     "toad-scheduler": "^1.6.1",

@@ -3,6 +3,7 @@ require('dotenv').config();
 const app = require('../server.js');
 const supertest = require('supertest');
 const { DEFAULT_HELP_MESSAGE } = require('../config.js');
+const { addSupervisor } = require('../utils/add-supervisor.js');
 const request = supertest(app);
 
 const mockUser = {
@@ -45,10 +46,19 @@ const mobileMockUser = {
   lastReceivedPush: '2022-08-18T14:11:13.084Z',
 };
 
+const mockSupervisor = {
+  phoneNumber: '0587999999',
+  email: 'test-supervisor@gmail.com',
+  username: 'test-supervisor-name',
+  password: 'abcd1234',
+  growersNumbers: '0587400020',
+};
+
 let connection;
 let db;
 let user;
 let mainCollection;
+let superCollection;
 
 beforeAll(async () => {
   connection = await MongoClient.connect(process.env.MONGODB_URI, {
@@ -58,8 +68,8 @@ beforeAll(async () => {
   db = await connection.db('hydroponics');
   user = db.collection('test-collection');
   mainCollection = db.collection('users');
-  // await mainCollection.deleteOne(mockUser);
-  // await mainCollection.deleteOne(mobileMockUser);
+  superCollection = db.collection('supervisors');
+  await addSupervisor(mockSupervisor);
   await user.insertOne(mockUser);
 });
 
@@ -67,13 +77,21 @@ afterAll(async () => {
   await db.dropCollection('test-collection');
   await mainCollection.findOneAndDelete({ phoneNumber: mockUser.phoneNumber });
   await mainCollection.findOneAndDelete({ phoneNumber: mobileMockUser.phoneNumber });
+  await superCollection.findOneAndDelete({ phoneNumber: `whatsapp:+972${+mockSupervisor.phoneNumber}` });
   await connection.close();
 });
 
-describe('Testing database', () => {
+describe('Testing mock database', () => {
   it('should insert a doc with a mock user', async () => {
     const insertedUser = await user.findOne({ phoneNumber: mockUser.phoneNumber });
     expect(insertedUser).toEqual({ ...mockUser, _id: insertedUser._id });
+  });
+});
+
+describe('Testing supervisor collection', () => {
+  it('should insert a doc with a mock supervisor', async () => {
+    const insertedUser = await superCollection.findOne({ phoneNumber: `whatsapp:+972${+mockSupervisor.phoneNumber}` });
+    expect(insertedUser).toEqual({ ...insertedUser, phoneNumber: `whatsapp:+972${+mockSupervisor.phoneNumber}` });
   });
 });
 
@@ -81,6 +99,12 @@ describe('Testing endpoints', () => {
   it('should receive response from the root route', async () => {
     const response = await request.get('/');
     expect(response.text).toBe('<h1>Hello from Hydroponics!</h1>');
+  });
+
+  it('Should successfully log in as supervisor', async () => {
+    const response = await request.post('/super/login').send({ email: mockSupervisor.email, password: mockSupervisor.password });
+    expect(response.status).toBe(200);
+    expect(response.body.token).toBeTruthy();
   });
 
   it('Should subscribe a new user', async () => {
