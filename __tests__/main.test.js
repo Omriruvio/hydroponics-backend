@@ -172,7 +172,7 @@ describe('Testing endpoints', () => {
   });
 
   it("Should retrieve list of supervisors' growers", async () => {
-    const response = await request.get(`/super/growers`).send({ email: mockSupervisor.email });
+    const response = await request.get(`/super/growers/${mockSupervisor.email}`);
     expect(response.body.users.some((user) => user.email === mockUser.email)).toBeTruthy();
     expect(response.status).toBe(200);
   });

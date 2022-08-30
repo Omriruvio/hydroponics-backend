@@ -23,9 +23,9 @@ const handleSuperSignin = (req, res, next) => {
 };
 
 const getGrowers = (req, res, next) => {
-  const { email } = req.body;
+  const { superEmail } = req.params;
   supervisor
-    .findOne({ email })
+    .findOne({ email: superEmail })
     .select('users')
     .populate('users', '-messageHistory')
     .orFail(() => next({ message: 'No growers found for selected user', statusCode: 404 }))
@@ -41,7 +41,7 @@ const addGrower = async (req, res, next) => {
     const userId = await user.findOne({ phoneNumber });
     if (!userId) throw new Error({ message: 'Grower not found', statusCode: 404 });
     supervisor
-      .findByIdAndUpdate(_id, { $push: { users: userId._id } }, { upsert: true })
+      .findByIdAndUpdate(_id, { $push: { users: userId._id } }, { upsert: true, new: true })
       .orFail(() => next({ message: 'Supervisor not found', statusCode: 404 }))
       .then((result) => {
         res.status(204).send({ message: 'Grower added' });
