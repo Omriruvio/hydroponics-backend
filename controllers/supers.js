@@ -14,6 +14,7 @@ const handleSuperSignin = (req, res, next) => {
       bcrypt.compare(password, user.password).then((match) => {
         if (!match) {
           res.status(403).send({ message: 'Invlid credentials.' });
+          return;
         }
         const token = jwt.sign({ _id: user._id }, NODE_ENV === 'production' ? JWT_SECRET : 'dev-secret', { expiresIn: '7d' });
         res.send({ token });
