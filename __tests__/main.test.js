@@ -60,6 +60,7 @@ let user;
 let mainCollection;
 let superCollection;
 let mockSupervisorId;
+let supervisorToken;
 
 beforeAll(async () => {
   connection = await MongoClient.connect(process.env.MONGODB_URI, {
@@ -107,6 +108,12 @@ describe('Testing endpoints', () => {
     const response = await request.post('/super/login').send({ email: mockSupervisor.email, password: mockSupervisor.password });
     expect(response.status).toBe(200);
     expect(response.body.token).toBeTruthy();
+    supervisorToken = response.body.token;
+  });
+
+  it('Should successfully verify a supervisor with a token', async () => {
+    const response = await request.get('/super/verify').set('authorization', `Bearer ${supervisorToken}`);
+    expect(response.status).toBe(200);
   });
 
   it('Should subscribe a new user', async () => {
@@ -167,12 +174,15 @@ describe('Testing endpoints', () => {
   });
 
   it('Should add a grower to a supervisor', async () => {
-    const response = await request.put('/super/add-grower').send({ _id: mockSupervisorId, phoneNumber: mockUser.phoneNumber });
+    const response = await request
+      .put('/super/add-grower')
+      .send({ _id: mockSupervisorId, phoneNumber: mockUser.phoneNumber })
+      .set('authorization', `Bearer ${supervisorToken}`);
     expect(response.status).toBe(204);
   });
 
   it("Should retrieve list of supervisors' growers", async () => {
-    const response = await request.get(`/super/growers/${mockSupervisor.email}`);
+    const response = await request.get(`/super/growers`).set('authorization', `Bearer ${supervisorToken}`);
     expect(response.body.users.some((user) => user.email === mockUser.email)).toBeTruthy();
     expect(response.status).toBe(200);
   });

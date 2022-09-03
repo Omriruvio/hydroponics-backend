@@ -24,9 +24,10 @@ const handleSuperSignin = (req, res, next) => {
 };
 
 const getGrowers = (req, res, next) => {
-  const { superEmail } = req.params;
+  const { _id } = req.user;
+  if (!_id) next(new Error({ message: 'No token received', statusCode: 403 }));
   supervisor
-    .findOne({ email: superEmail })
+    .findById(_id)
     .select('users')
     .populate('users', '-messageHistory')
     .orFail(() => next({ message: 'No growers found for selected user', statusCode: 404 }))
@@ -52,4 +53,14 @@ const addGrower = async (req, res, next) => {
   }
 };
 
-module.exports = { handleSuperSignin, getGrowers, addGrower };
+const getAdminDetails = (req, res, next) => {
+  const { _id: userId } = req.user;
+  supervisor
+    .findById(userId)
+    .then((admin) => {
+      res.send({ email: admin.email, name: admin.username });
+    })
+    .catch(next);
+};
+
+module.exports = { handleSuperSignin, getGrowers, addGrower, getAdminDetails };

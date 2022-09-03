@@ -18,7 +18,7 @@ const client = require('twilio')(SID, AUTH_TOKEN);
 router.post('/register', handleSignup);
 router.post('/login', handleLogin);
 // incoming request from twilio flow authentication process
-router.post('/identify', authMiddleware, handleTwilioAuth);
+router.post('/identify', handleTwilioAuth);
 
 router.post('/cropdata', handleIfImage, handleCropData);
 router.post('/delete-last', handleDeleteLast);
