@@ -7,7 +7,7 @@ const { SID, AUTH_TOKEN, HYDROPONICS_WA_NUMBER, NODE_ENV } = process.env;
 const client = require('twilio')(SID, AUTH_TOKEN);
 
 const handleSignup = (req, res, next) => {
-  const { email, password, phoneNumber, messageOptIn, username } = req.body;
+  const { email, phoneNumber, username } = req.body;
 
   User.create({ email, phoneNumber, username })
     .then((user) => {
@@ -24,26 +24,6 @@ const handleSignup = (req, res, next) => {
       }
       next(err);
     });
-
-  // console.log('email', email);
-  // console.log(password);
-
-  // bcrypt
-  //   .hash(password, 10)
-  //   .then((hash) => {
-  //     User.create({
-  //       email,
-  //       password: hash,
-  //       // phoneNumber: phone,
-  //       // messageOptIn,
-  //     })
-  //       .then((user) => {
-  //         res.status(200).send({ email: user.email, id: user._id });
-  //       })
-  //       .catch(() => next(new Error('User already exists.')));
-  //     // TODO: custom error & status codes
-  //   })
-  //   .catch(next);
 };
 
 const handleMobileSignup = (req, res, next) => {
@@ -71,15 +51,6 @@ const handleLogin = (req, res, next) => {
       } else {
         res.status(400).send({ message: 'Incorrect credentials.' });
       }
-      // bcrypt
-      //   .compare(password, user.password)
-      //   .then((match) => {
-      //     if (match) res.send({ id: user._id });
-      //     else throw new Error('Access denied.');
-      //     // TODO: custom error & status codes
-      //   })
-      //   .catch(next);
-      // // TODO: custom error & status codes
     })
     .catch((err) => {
       if (err.message === 'User not found') {

@@ -176,7 +176,7 @@ describe('Testing endpoints', () => {
   it('Should add a grower to a supervisor', async () => {
     const response = await request
       .put('/super/add-grower')
-      .send({ _id: mockSupervisorId, phoneNumber: mockUser.phoneNumber })
+      .send({ phoneNumber: mockUser.phoneNumber })
       .set('authorization', `Bearer ${supervisorToken}`);
     expect(response.status).toBe(204);
   });

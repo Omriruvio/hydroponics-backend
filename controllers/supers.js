@@ -39,7 +39,8 @@ const getGrowers = (req, res, next) => {
 
 const addGrower = async (req, res, next) => {
   try {
-    const { _id, phoneNumber } = req.body;
+    const { _id } = req.user;
+    const { phoneNumber } = req.body;
     const userId = await user.findOne({ phoneNumber });
     if (!userId) throw new Error({ message: 'Grower not found', statusCode: 404 });
     supervisor
