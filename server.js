@@ -19,6 +19,7 @@ app.use(rateLimiter);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
+app.set('trust proxy', true);
 
 mongoose.connect(MONGODB_URI);
 
