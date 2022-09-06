@@ -48,6 +48,20 @@ const userSchema = new mongoose.Schema({
       ph: { type: String },
       ec: { type: String },
       handled: { type: Boolean, default: false },
+      healthState: {
+        isHealthy: {
+          type: String,
+          enum: ['positive', 'likely-positive', 'likely-negative', 'negative'],
+        },
+        hasPestPresence: {
+          type: String,
+          enum: ['positive', 'likely-positive', 'likely-negative', 'negative'],
+        },
+        hasDeficiencies: {
+          type: String,
+          enum: ['positive', 'likely-positive', 'likely-negative', 'negative'],
+        },
+      },
     },
   ],
 

@@ -1,5 +1,6 @@
 const { DAYS } = require('./constants');
 
+// configuration for min/max hours and days of the week to push notifications for inactivity
 module.exports.PUSH_MIN_UTC_HOUR = 11;
 module.exports.PUSH_MAX_UTC_HOUR = 18;
 module.exports.PUSH_MIN_WEEK_DAY = DAYS.MON;
@@ -21,3 +22,15 @@ module.exports.DEFAULT_HELP_MESSAGE =
   `\n*Additional commands:*\n` +
   `*'help'* - For this reference sheet\n` +
   `*'delete'* - Remove latest crop data submission`;
+
+module.exports.PROBABILITY = {
+  VERY_LOW: 0.25,
+  LOW: 0.5,
+  HIGH: 0.75,
+};
+
+module.exports.EMOJI = {
+  GOOD: '✅',
+  NEUTRAL: '⚠️',
+  WARNING: '⛔',
+};
