@@ -8,7 +8,8 @@ const { SID, AUTH_TOKEN, HYDROPONICS_WA_NUMBER, NODE_ENV } = process.env;
 const client = require('twilio')(SID, AUTH_TOKEN);
 
 const handleSignup = (req, res, next) => {
-  const { email, phoneNumber, username } = req.body;
+  // todo - make frontend force submitting username
+  const { email, phoneNumber, username = 'user' } = req.body;
 
   User.create({ email, phoneNumber, username })
     .then((user) => {
@@ -30,7 +31,7 @@ const handleSignup = (req, res, next) => {
 const handleMobileSignup = (req, res, next) => {
   const { email, phoneNumber, whatsappName } = req.body;
   // todo: consider removing whatsapp: format from phone number
-  User.create({ email, phoneNumber, username: whatsappName })
+  User.create({ email: email.toLowerCase(), phoneNumber, username: whatsappName })
     .then((user) => {
       res.status(200).send({ email: user.email, id: user._id });
     })
