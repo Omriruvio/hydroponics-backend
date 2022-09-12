@@ -3,6 +3,11 @@ const automl = require('@tensorflow/tfjs-automl');
 const fs = require('fs');
 const path = require('path');
 
+/**
+ * It takes a model URL, and returns an array of words
+ * @param modelUrl - The path to the model.
+ * @returns An array of words.
+ */
 const loadDictionary = (modelUrl) => {
   modelUrl = path.resolve(modelUrl);
   const lastIndexOfSlash = modelUrl.lastIndexOf(path.normalize('/'));
@@ -12,11 +17,22 @@ const loadDictionary = (modelUrl) => {
   return text.trim().split('\n');
 };
 
+/**
+ * It loads the model and the dictionary from the modelUrl, and returns a new ImageClassificationModel
+ * object
+ * @param modelUrl - The URL of the model.
+ * @returns A new instance of the ImageClassificationModel class.
+ */
 const loadImageClassification = async (modelUrl) => {
   const [model, dict] = await Promise.all([tf.loadGraphModel(`file://${modelUrl}`), loadDictionary(modelUrl)]);
   return new automl.ImageClassificationModel(model, dict);
 };
 
+/**
+ * It takes a base64 encoded image and returns a tensorflow image
+ * @param image - The image to be decoded.
+ * @returns A tensor.
+ */
 const decodeImage = (image) => {
   const arrByte = Uint8Array.from(Buffer.from(image));
   return tf.node.decodeImage(arrByte);

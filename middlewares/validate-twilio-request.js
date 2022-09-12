@@ -8,13 +8,13 @@ const verifyTwilioRequest = (req, res, next) => {
     return next();
   }
   const twilioSignature = req.headers['x-twilio-signature'];
-  const validation_url = `${req.protocol}://${req.hostname}${req.url}`;
-
+  // protocols must match - if errors occur check here first
+  const validation_url = `https://${req.hostname}${req.url}`;
   if (twilio.validateRequest(process.env.TWILIO_AUTH_TOKEN, twilioSignature, validation_url, {})) {
-    // console.log('twilio message validated successfully!');
+    console.log('twilio message validated successfully!');
     next();
   } else {
-    // console.log('** Invalid twilio signature on incoming request!');
+    console.log('** Invalid twilio signature on incoming request!');
     res.status(403).send({
       error: 'Invalid signature.',
     });

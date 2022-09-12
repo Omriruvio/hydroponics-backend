@@ -44,6 +44,6 @@ const task = new AsyncTask(
   }
 );
 // set to check every two hours
-const pollForPushNotification = new SimpleIntervalJob({ seconds: 60, runImmediately: true }, task);
+const pollForPushNotification = new SimpleIntervalJob({ seconds: 600, runImmediately: true }, task);
 
 module.exports = { scheduler, pollForPushNotification };
