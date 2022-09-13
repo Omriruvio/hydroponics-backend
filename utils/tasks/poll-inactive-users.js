@@ -12,6 +12,7 @@ const scheduler = new ToadScheduler();
 const task = new AsyncTask(
   'simple task',
   () => {
+    console.log('Polling for inactive users...');
     // only execute between hours set in /config.js
     // and between monday - thursday
     if (!isPushTimeEligible()) {
@@ -34,12 +35,14 @@ const task = new AsyncTask(
           // send message and add to successfullyPushedNumbers in the then block
         });
       } catch (err) {
+        console.log(err);
         logError(err);
       }
     });
   },
   (err) => {
     if (err.timeBoundaryRejection) return;
+    console.log(err);
     logError(err);
   }
 );

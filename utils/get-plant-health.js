@@ -51,13 +51,20 @@ const decodeImage = (image) => {
 const getPlantHealth = async (req, res, next) => {
   if (req.body.imageUrl) {
     try {
+      tf.engine().startScope();
       const modelURL = path.join(__dirname, '/plant-health-ml-model/model.json');
       const model = await loadImageClassification(modelURL);
       const image = await fetch(req.body.imageUrl).then((res) => res.arrayBuffer());
       const decodedImage = decodeImage(image);
       const result = await model.classify(decodedImage);
       req.body.plantHealth = result;
-      next();
+      tf.dispose(model);
+      tf.dispose(decodedImage);
+      tf.dispose(result);
+      tf.engine().endScope();
+      tf.engine().disposeVariables();
+      tf.engine().reset();
+      return next();
     } catch (error) {
       next(error);
     }
