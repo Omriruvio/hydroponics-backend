@@ -6,6 +6,7 @@ const parseCropData = require('../utils/parsecorpdata.js');
 const getResponseMessage = require('../utils/response-text');
 const { SID, AUTH_TOKEN, HYDROPONICS_WA_NUMBER, NODE_ENV } = process.env;
 const client = require('twilio')(SID, AUTH_TOKEN);
+const jwt = require('jsonwebtoken');
 
 const handleSignup = (req, res, next) => {
   // todo - make frontend force submitting username
@@ -39,6 +40,16 @@ const handleMobileSignup = (req, res, next) => {
   // TODO: custom error & status codes
 };
 
+const handleGetUser = (req, res, next) => {
+  const { _id } = req.user;
+  User.findById(_id)
+    .orFail(() => next(new Error('User not found!')))
+    .then((user) => {
+      res.send(user);
+    })
+    .catch(next);
+};
+
 const handleLogin = (req, res, next) => {
   const { email, phoneNumber } = req.body;
   User.findOne({ email })
@@ -49,7 +60,8 @@ const handleLogin = (req, res, next) => {
       // todo: consider adjusting phone number to whatsapp:+XXXYYYYYYY format
       // todo: or adjust db to store phone numbers without whatsap format
       if (String(user.phoneNumber).endsWith(String(+phoneNumber))) {
-        res.send({ id: user._id });
+        const token = jwt.sign({ _id: user._id }, NODE_ENV === 'production' ? JWT_SECRET : 'dev-secret', { expiresIn: '7d' });
+        res.send({ token });
       } else {
         res.status(400).send({ message: 'Incorrect credentials.' });
       }
@@ -200,4 +212,5 @@ module.exports = {
   handleLogin,
   handleMobileSignup,
   handleCropData,
+  handleGetUser,
 };

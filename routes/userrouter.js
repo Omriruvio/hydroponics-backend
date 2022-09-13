@@ -7,7 +7,9 @@ const {
   handleDeleteLast,
   handleTwilioAuth,
   handleHistoryRequest,
+  handleGetUser,
 } = require('../controllers/users');
+const auth = require('../middlewares/auth');
 const handleIfImage = require('../middlewares/check-for-image');
 const router = require('express').Router();
 const { verifyTwilioRequest } = require('../middlewares/validate-twilio-request');
@@ -17,6 +19,7 @@ const { getPlantHealth } = require('../utils/get-plant-health');
 router.post('/register', handleSignup);
 router.post('/login', handleLogin);
 router.get('/history/:phone/:days', handleHistoryRequest);
+router.get('/me', auth, handleGetUser);
 
 // incoming requests from twilio studio
 router.post('/identify', verifyTwilioRequest, handleTwilioAuth);
