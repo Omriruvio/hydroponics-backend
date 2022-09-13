@@ -4,7 +4,7 @@ const User = require('../models/user');
 const { getImageResponseMessage } = require('../utils/get-image-response-message');
 const parseCropData = require('../utils/parsecorpdata.js');
 const getResponseMessage = require('../utils/response-text');
-const { SID, AUTH_TOKEN, HYDROPONICS_WA_NUMBER, NODE_ENV } = process.env;
+const { SID, AUTH_TOKEN, HYDROPONICS_WA_NUMBER, NODE_ENV, JWT_SECRET } = process.env;
 const client = require('twilio')(SID, AUTH_TOKEN);
 const jwt = require('jsonwebtoken');
 
@@ -17,15 +17,9 @@ const handleSignup = (req, res, next) => {
       res.status(201).send({ message: 'User created successfully.' });
     })
     .catch((err) => {
-      console.log(err.code);
       if (err.code === 11000) {
-        if (NODE_ENV === 'DEV') {
-          res.status(409).send({ message: 'User already exists.' });
-        } else {
-          res.status(400).send({ message: 'Error creating user.' });
-        }
-      }
-      next(err);
+        res.status(409).send({ message: 'User already exists.' });
+      } else next(err);
     });
 };
 
