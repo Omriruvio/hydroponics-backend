@@ -4,8 +4,8 @@ const User = require('../models/user');
 const { getImageResponseMessage } = require('../utils/get-image-response-message');
 const parseCropData = require('../utils/parsecorpdata.js');
 const getResponseMessage = require('../utils/response-text');
-const { SID, AUTH_TOKEN, HYDROPONICS_WA_NUMBER, NODE_ENV, JWT_SECRET } = process.env;
-const client = require('twilio')(SID, AUTH_TOKEN);
+const { TWILIO_SID, TWILIO_AUTH_TOKEN, HYDROPONICS_WA_NUMBER, NODE_ENV, JWT_SECRET } = process.env;
+const client = require('twilio')(TWILIO_SID, TWILIO_AUTH_TOKEN);
 const jwt = require('jsonwebtoken');
 
 const handleSignup = (req, res, next) => {

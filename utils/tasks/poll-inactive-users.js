@@ -4,8 +4,8 @@ const logError = require('../errors/log-error');
 const { getFormattedPushMessage } = require('../get-formatted-push-message');
 const { getNumbersToPush } = require('../get-numbers-to-push');
 const isPushTimeEligible = require('../is-push-time');
-const { SID, AUTH_TOKEN, HYDROPONICS_WA_NUMBER, NODE_ENV } = process.env;
-const client = require('twilio')(SID, AUTH_TOKEN);
+const { TWILIO_SID, TWILIO_AUTH_TOKEN, HYDROPONICS_WA_NUMBER, NODE_ENV } = process.env;
+const client = require('twilio')(TWILIO_SID, TWILIO_AUTH_TOKEN);
 
 // schedules interval for requesting periodical data
 const scheduler = new ToadScheduler();

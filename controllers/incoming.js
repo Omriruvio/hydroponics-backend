@@ -1,5 +1,5 @@
-const { SID, AUTH_TOKEN, HYDROPONICS_WA_NUMBER } = process.env;
-const client = require('twilio')(SID, AUTH_TOKEN);
+const { TWILIO_SID, TWILIO_AUTH_TOKEN, HYDROPONICS_WA_NUMBER } = process.env;
+const client = require('twilio')(TWILIO_SID, TWILIO_AUTH_TOKEN);
 
 module.exports = (req, res, next) => {
   if (!req.body.From) throw new Error('Not a recognized message type (whatsapp only route).');
