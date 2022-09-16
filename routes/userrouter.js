@@ -8,6 +8,7 @@ const {
   handleTwilioAuth,
   handleHistoryRequest,
   handleGetUser,
+  handleNewSystem,
 } = require('../controllers/users');
 const auth = require('../middlewares/auth');
 const handleIfImage = require('../middlewares/check-for-image');
@@ -20,6 +21,8 @@ router.post('/register', handleSignup);
 router.post('/login', handleLogin);
 router.get('/history/:phone/:days', handleHistoryRequest);
 router.get('/me', auth, handleGetUser);
+router.post('/new-system', handleNewSystem);
+
 
 // incoming requests from twilio studio
 router.post('/identify', verifyTwilioRequest, handleTwilioAuth);

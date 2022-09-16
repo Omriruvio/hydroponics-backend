@@ -61,6 +61,9 @@ let mainCollection;
 let superCollection;
 let mockSupervisorId;
 let supervisorToken;
+let systemsCollection;
+let testSystemCollectionId;
+let mockUserId;
 
 beforeAll(async () => {
   connection = await MongoClient.connect(process.env.MONGODB_URI, {
@@ -71,8 +74,10 @@ beforeAll(async () => {
   user = db.collection('test-collection');
   mainCollection = db.collection('users');
   superCollection = db.collection('supervisors');
+  systemsCollection = db.collection('systems');
   await addSupervisor(mockSupervisor);
   await user.insertOne(mockUser);
+  await systemsCollection.deleteMany({ ownerName: 'mock-user' });
 });
 
 afterAll(async () => {
@@ -80,6 +85,9 @@ afterAll(async () => {
   await mainCollection.findOneAndDelete({ phoneNumber: mockUser.phoneNumber });
   await mainCollection.findOneAndDelete({ phoneNumber: mobileMockUser.phoneNumber });
   await superCollection.findOneAndDelete({ phoneNumber: `whatsapp:+972${+mockSupervisor.phoneNumber}` });
+  await systemsCollection.findOneAndDelete({ users: { $in: [testSystemCollectionId] } });
+  await systemsCollection.deleteMany({ ownerName: 'mock-user' });
+
   await connection.close();
 });
 
@@ -118,6 +126,8 @@ describe('Testing endpoints', () => {
 
   it('Should subscribe a new user', async () => {
     const response = await request.post('/register').send(mockUser);
+    expect(response.body.userId).toBeTruthy();
+    mockUser._id = response.body.userId;
     expect(response.status).toBe(201);
   });
 
@@ -159,7 +169,10 @@ describe('Testing endpoints', () => {
     const response = await request.post('/cropdata').send(mockCropDataMessage);
     expect(response.body.status).toBe('ok');
     const insertedUser = await mainCollection.findOne({ phoneNumber: mockUser.phoneNumber });
-    expect(insertedUser.messageHistory.at(-1).messageBody).toBe(defaultMessage);
+    const systemId = insertedUser.systems[0];
+    const system = await db.collection('systems').findOne({ _id: systemId });
+    const message = system.messageHistory.find((msg) => msg.messageBody === defaultMessage);
+    expect(message.messageBody).toBe(defaultMessage);
   });
 
   it('Should successfully respond to request for help', async () => {
@@ -192,5 +205,40 @@ describe('Testing endpoints', () => {
     expect(response.body.status).toBe('ok');
     const insertedUser = await mainCollection.findOne({ phoneNumber: mockUser.phoneNumber });
     expect(insertedUser.messageHistory.at(-1)).toBeFalsy();
+  });
+
+  it('Should create a new system for mock user', async () => {
+    // request body should contain the system name, and the user's phone number, it returns the new system's id
+    const response = await request.post('/new-system').send({ phoneNumber: mockUser.phoneNumber, systemName: 'test system' });
+    expect(response.body.systemId).toBeTruthy();
+    const insertedUser = await mainCollection.findOne({ phoneNumber: mockUser.phoneNumber });
+    expect(insertedUser.systems.length).toBe(2);
+    testSystemCollectionId = response.body.systemId;
+  });
+
+  it('Should add a user to a system', async () => {
+    // returns the system's object
+    const response = await request.post('/add-user-to-system').send({ userId: mockUser._id, systemId: testSystemCollectionId });
+    expect(response.status).toBe(200);
+    // check that response body includes the system property and log it
+    const receivedSystem = response.body.system;
+    expect(receivedSystem).toBeTruthy();
+    // check that received system has a users property array with the mock user's id
+    expect(receivedSystem.users.some((user) => user === mockUser._id)).toBeTruthy();
+  });
+
+  it('Should get all existing users of a system', async () => {
+    const response = await request.get(`/get-system-users/${testSystemCollectionId}`);
+    expect(response.body.users).toBeTruthy();
+    expect(response.body.users.some((user) => user.email === mockUser.email)).toBeTruthy();
+  });
+
+  it('Should remove a user from a system', async () => {
+    const response = await request.delete('/remove-user-from-system').send({ phoneNumber: mockUser.phoneNumber, systemId: testSystemCollectionId });
+    expect(response.status).toBe(200);
+    // find all systems in the db, get the last system from the array and check that in this system the mockuser is not in the users array or that the array is empty
+    const allSystems = await db.collection('systems').find({}).toArray();
+    const lastSystem = allSystems[allSystems.length - 1];
+    expect(lastSystem.users.some((user) => user === mockUser._id)).toBeFalsy();
   });
 });

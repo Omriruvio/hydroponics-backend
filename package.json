@@ -30,6 +30,7 @@
     "mongoose": "^6.4.0",
     "toad-scheduler": "^1.6.1",
     "twilio": "^3.77.2",
+    "uuid": "^9.0.0",
     "validator": "^13.7.0",
     "winston": "^3.7.2"
   },
