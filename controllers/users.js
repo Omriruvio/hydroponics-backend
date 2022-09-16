@@ -133,24 +133,62 @@ const handleCropData = async (req, res, next) => {
   }
 };
 
-const handleDeleteLast = (req, res, next) => {
-  const { phoneNumber } = req.body;
-  User.updateOne({ phoneNumber }, { $pop: { messageHistory: 1 } })
-    .then((message) => {
+const handleDeleteLast = async (req, res, next) => {
+  // finds the user by phone number and deletes the last crop data entry
+  // finds the latest message from the combination of both the users message history and the users' systems message histories
+  // if NODE_ENV is test, returns a 200 status code and a message after deleting the last entry
+  // if NODE_ENV is not test, sends a twilio whatsapp message to the user and returns a 200 status code
+  // if modifiedCount is 0, returns a 204 status code and a message saying "We have found nothing to delete."
+  // if a message was successfully deleted and NODE_ENV is not test, returns a 200 status code and a message saying "Your last message was deleted."
+
+  // find the last message the user sent between their own message history and their systems' message histories
+  try {
+    const { phoneNumber } = req.body;
+    const user = await User.findOne({ phoneNumber });
+    if (!user) res.status(204).send({ message: 'User not found.' });
+    const lastSystemsMessage = await System.getLastMessage(user.systems);
+    const lastUserMessage = user.messages?.[user.messages?.length - 1] || { createdAt: 0 };
+    if (!lastSystemsMessage || lastUserMessage.createdAt > lastSystemsMessage.createdAt) {
+      const deletedMessage = user.messages.pop();
+      await User.findByIdAndUpdate(user._id, { messages: user.messages });
       if (NODE_ENV === 'test') {
-        res.send({ status: 'ok', message: 'Delete request received.' });
+        res.send({ status: 'ok', message: 'Test message deleted.' });
         return;
       }
-      if (message.modifiedCount === 0) {
-        const responseMessage = 'We have found nothing to delete.';
-        sendWhatsappMessage(phoneNumber, responseMessage).then(() => res.status(200).send({ responseMessage }));
-      } else {
-        const responseMessage = 'Latest data submission has been deleted.';
-        sendWhatsappMessage(phoneNumber, responseMessage).then(() => res.status(200).send({ responseMessage }));
+      await sendWhatsappMessage(phoneNumber, `Your last message was deleted: ${deletedMessage.messageBody}`);
+      res.status(200).send({ message: 'Your last message was deleted.' });
+    } else if (lastSystemsMessage) {
+      const deletedMessage = await System.deleteLastMessage(user.systems);
+      if (NODE_ENV === 'test') {
+        res.send({ status: 'ok', message: 'Test message deleted.' });
+        return;
       }
-    })
-    .catch(next);
+      await sendWhatsappMessage(phoneNumber, `Your last message was deleted: ${deletedMessage.messageBody}`);
+      res.status(200).send({ message: 'Your last message was deleted.' });
+    } else {
+      res.status(204).send({ message: 'We have found nothing to delete.' });
+    }
+  } catch (err) {
+    next(err);
+  }
 };
+
+  // const { phoneNumber } = req.body;
+  // User.updateOne({ phoneNumber }, { $pop: { messageHistory: 1 } })
+  //   .then((message) => {
+  //     if (NODE_ENV === 'test') {
+  //       res.send({ status: 'ok', message: 'Delete request received.' });
+  //       return;
+  //     }
+  //     if (message.modifiedCount === 0) {
+  //       const responseMessage = 'We have found nothing to delete.';
+  //       sendWhatsappMessage(phoneNumber, responseMessage).then(() => res.status(200).send({ responseMessage }));
+  //     } else {
+  //       const responseMessage = 'Latest data submission has been deleted.';
+  //       sendWhatsappMessage(phoneNumber, responseMessage).then(() => res.status(200).send({ responseMessage }));
+  //     }
+  //   })
+  //   .catch(next);
 
 const handleHelpRequest = (req, res, next) => {
   const { phoneNumber } = req.body;

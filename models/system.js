@@ -119,4 +119,47 @@ systemSchema.statics.addUser = async function (systemId, userId) {
   return system.save();
 };
 
+/**
+ * Receives user.systems - array of system ids, returns the most recent message out of all latest systems messages
+ */
+
+systemSchema.statics.getLastMessage = async function (systems) {
+  // make an array of all the latest messages from each system
+  // find the most recent message out of all the latest messages
+  const latestMessages = await Promise.all(
+    systems.map(async (system) => {
+      const systemMessages = await this.findById(system).select('messageHistory');
+      const latestMessage = systemMessages.messageHistory[systemMessages.messageHistory.length - 1];
+      return latestMessage;
+    })
+  );
+  const mostRecentMessage = latestMessages.reduce((acc, curr) => 
+    acc.dateReceived > curr.dateReceived ? acc : curr);
+  
+  return mostRecentMessage || null;
+};
+
+/**
+ * Receives user.systems - array of system ids, finds the system with the most recent message and deletes it
+ */
+
+systemSchema.statics.deleteLastMessage = async function (systems) {
+  const latestMessages = await Promise.all(
+    systems.map(async (system) => {
+      const systemMessages = await this.findById(system).select('messageHistory');
+      const latestMessage = systemMessages.messageHistory[systemMessages.messageHistory.length - 1];
+      return latestMessage;
+    })
+  );
+  
+  const mostRecentMessage = latestMessages.reduce((acc, curr) => 
+    acc.dateReceived > curr.dateReceived ? acc : curr);
+  
+  const system = await this.findById(mostRecentMessage._id);
+  system?.messageHistory?.pop();
+  return system ? system.save() : null;
+};
+
+
+
 module.exports = mongoose.model('system', systemSchema);
