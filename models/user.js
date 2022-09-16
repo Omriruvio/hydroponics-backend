@@ -52,7 +52,7 @@ const userSchema = new mongoose.Schema({
     {
       imageUrl: String,
       dateReceived: { type: Date, default: Date.now() },
-      messageBody: { type: String, required: true },
+      messageBody: { type: String },
       temperature: { type: String },
       humidity: { type: String },
       ph: { type: String },
@@ -87,31 +87,26 @@ const userSchema = new mongoose.Schema({
  */
 
 userSchema.statics.getMessageHistoryFrom = async function (phoneNumber, toDate, dayOffset, systemId) {
-  if (!systemId) {
-    const user = await this.findOne({ phoneNumber });
-    systemId = user.defaultSystem;
-    if (!systemId) {
-      throw new Error('No system id was specified and no default system found');
-    }
-  }
-
   const fromDate = new Date(toDate);
   fromDate.setDate(fromDate.getDate() - dayOffset);
-  const system = await System.findById(systemId);
-  const messages = system.messageHistory.filter((message) => {
-    return message.dateReceived >= fromDate && message.dateReceived <= toDate;
-  });
+  const inDateRange = (message) => message.dateReceived >= fromDate && message.dateReceived <= toDate;
 
-  // if user.messageHistory contains messages, filter them according to the same criteria and add them to the results array
-  const user = await this.findOne({ phoneNumber });
-  if (user.messageHistory.length > 0) {
-    const userMessages = user.messageHistory.filter((message) => {
-      return message.dateReceived >= fromDate && message.dateReceived <= toDate;
-    });
-    messages.push(...userMessages);
+  // if no systemId is provided, check if the user has a default system, if they do, return the messages from the user's message history and the messages from the default system message history. if the user default system is not valid, return the user's message history.
+  if (!systemId) {
+    const user = await this.findOne({ phoneNumber });
+    if (!user) throw new Error('User not found');
+    const userMessageHistory = user.messageHistory.filter(inDateRange);
+    if (user.defaultSystem) {
+      const system = await System.findById(user.defaultSystem);
+      if (!system) return userMessageHistory;
+      return [...userMessageHistory, ...system.messageHistory.filter(inDateRange)];
+    }
+    return userMessageHistory;
   }
-
-  return messages;
+  // get system message history
+  const system = await System.findById(systemId);
+  if (!system) throw new Error('System not found');
+  return system.messageHistory.filter(inDateRange);
 };
 
 /**

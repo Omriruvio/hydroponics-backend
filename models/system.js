@@ -28,7 +28,7 @@ const systemSchema = new mongoose.Schema({
       user: { type: mongoose.Types.ObjectId, ref: 'user' },
       imageUrl: String,
       dateReceived: { type: Date, default: Date.now() },
-      messageBody: { type: String, required: true },
+      messageBody: { type: String },
       temperature: { type: String },
       humidity: { type: String },
       ph: { type: String },
