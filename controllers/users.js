@@ -155,7 +155,7 @@ const handleDeleteLast = async (req, res, next) => {
         res.send({ status: 'ok', message: 'Test message deleted.' });
         return;
       }
-      await sendWhatsappMessage(phoneNumber, `Your last message was deleted: ${deletedMessage.messageBody}`);
+      await sendWhatsappMessage(phoneNumber, `Your last message was deleted: ${deletedMessage.messageBody || deletedMessage.imageUrl || ''}`);
       res.status(200).send({ message: 'Your last message was deleted.' });
     } else if (lastSystemsMessage) {
       const deletedMessage = await System.deleteLastMessage(user.systems);
@@ -163,7 +163,7 @@ const handleDeleteLast = async (req, res, next) => {
         res.send({ status: 'ok', message: 'Test message deleted.' });
         return;
       }
-      await sendWhatsappMessage(phoneNumber, `Your last message was deleted: ${deletedMessage.messageBody}`);
+      await sendWhatsappMessage(phoneNumber, `Your last message was deleted: ${deletedMessage.messageBody || deletedMessage.imageUrl || ''}`);
       res.status(200).send({ message: 'Your last message was deleted.' });
     } else {
       res.status(204).send({ message: 'We have found nothing to delete.' });
