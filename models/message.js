@@ -5,6 +5,22 @@ const messageSchema = new mongoose.Schema({
     type: mongoose.Types.ObjectId,
     ref: 'user',
   },
+  system: {
+    type: mongoose.Types.ObjectId,
+    ref: 'system',
+  },
+  systemName: {
+    type: String,
+  },
+  systemOwnerName: {
+    type: String,
+  },
+  senderName: {
+    type: String,
+  },
+  senderPhoneNumber: {
+    type: String,
+  },
   imageUrl: String,
   dateReceived: {
     type: Date,
@@ -51,14 +67,27 @@ const messageSchema = new mongoose.Schema({
  * @returns {Promise<Message>} A promise that resolves with the created message
  */
 
-messageSchema.statics.addMessage = async function (message) {
+messageSchema.statics.addMessage = async function (message, systemId) {
   const Message = require('./message');
   const User = require('./user');
   const user = await User.findById(message.user);
   if (!user) {
     throw new Error(`Attempted to add message with a user id of: ${message.user} but user not found`);
   }
-  const newMessage = await Message.create(message);
+
+  const System = require('./system');
+  const system = await System.findById(systemId);
+  const systemName = system.name;
+  const systemOwnerName = system.ownerName;
+
+  const newMessage = await Message.create({
+    ...message,
+    senderName: user.username,
+    senderPhoneNumber: user.phoneNumber,
+    system: systemId,
+    systemName,
+    systemOwnerName,
+  });
   return newMessage;
 };
 

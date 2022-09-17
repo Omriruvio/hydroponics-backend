@@ -99,7 +99,8 @@ const handleTwilioAuth = (req, res, next) => {
 
 const handleCropData = async (req, res, next) => {
   try {
-    const { phoneNumber, messageBody, imageUrl, plantHealth, systemName } = req.body;
+    const selectedSystemId = req.selectedSystem;
+    const { phoneNumber, messageBody, imageUrl, plantHealth /* , systemName */ } = req.body;
     const { temperature, humidity, ph, ec } = parseCropData(messageBody);
     const { responseMessage: imageResponseMessage, healthState } = getImageResponseMessage(plantHealth);
     const responseMessage = imageUrl ? imageResponseMessage : getResponseMessage({ temperature, humidity, ph, ec });
@@ -112,7 +113,7 @@ const handleCropData = async (req, res, next) => {
 
     // const systemId = systemName ? user.systems.find((system) => system.name === systemName)._id : user.defaultSystem ? user.defaultSystem._id : (await System.createSystem(user._id)._id);
     let systemId;
-    if (systemName) systemId = user.systems.find((system) => system.name === systemName)._id;
+    if (selectedSystemId) systemId = selectedSystemId;
     if (!systemId && user.defaultSystem) systemId = String(user.defaultSystem);
     if (!systemId) {
       console.log('creating default system for user name: ', user.username, 'user id: ', user._id);
@@ -122,7 +123,7 @@ const handleCropData = async (req, res, next) => {
     }
 
     // create message in the message collection
-    const message = await Message.addMessage(messageData);
+    const message = await Message.addMessage(messageData, systemId);
     // add message to the system
     await System.addCropData(systemId, message._id);
     // add message to the user
@@ -133,6 +134,8 @@ const handleCropData = async (req, res, next) => {
       res.send({ status: 'ok', message: 'Test crop data processed.', messageId: message._id });
       return;
     }
+
+    console.log('Created message: ', message);
     await sendWhatsappMessage(phoneNumber, responseMessage);
     res.status(200).send({ responseMessage });
   } catch (err) {
@@ -156,6 +159,10 @@ const handleDeleteLast = async (req, res, next) => {
       sendWhatsappMessage(phoneNumber, 'We have found nothing to delete.');
       return res.status(204).send({ message: 'We have found nothing to delete.' });
     }
+
+    // remove the message from the user's messages array & the system's messages array
+    await User.deleteMessage(user._id, deletedMessage._id);
+    await System.deleteMessage(deletedMessage.system, deletedMessage._id);
 
     if (NODE_ENV === 'test') {
       res.send({ status: 'ok', message: 'Test last message deleted.' });

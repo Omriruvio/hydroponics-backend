@@ -19,11 +19,12 @@ module.exports.ERROR_LOG_PATH = '/logs/error.log';
 module.exports.DEFAULT_HELP_MESSAGE =
   `To submit crop data *respond with the following format:*\n` +
   `'*_temp_* value *_ph_* value *_ec_* value'\n\n` +
-  `You may send photos of your crop which will be analyzed and provide instant feedback regarding health, deficiencies and pest presence.\n\n` +
+  `You may send photos of your crop which will be analyzed and provide instant feedback regarding health, deficiencies and pest presence.\n` +
   `\n*Additional commands:*\n` +
   `*'help'* - For this reference sheet\n` +
   `*'dash/dashboard'* - Provides a link to your dashboard\n` +
-  `*'delete'* - Remove latest crop data submission`;
+  `*'delete'* - Remove latest crop data submission\n` +
+  `*'system <system-name> <data>'* - Submit crop data for a specific system\n`;
 
 module.exports.PROBABILITY = {
   VERY_LOW: 0.25,

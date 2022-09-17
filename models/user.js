@@ -159,4 +159,12 @@ userSchema.statics.addMessage = async function (userId, messageId) {
   return user.save();
 };
 
+// delete a message from the user's message history
+userSchema.statics.deleteMessage = async function (userId, messageId) {
+  const user = await this.findById(userId);
+  if (!user) throw new Error('User not found');
+  user.messageHistory = user.messageHistory.filter((message) => message.toString() !== messageId);
+  return user.save();
+};
+
 module.exports = mongoose.model('user', userSchema);

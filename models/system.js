@@ -15,6 +15,9 @@ const systemSchema = new mongoose.Schema({
   ownerName: {
     type: String,
   },
+  ownerPhoneNumber: {
+    type: String,
+  },
   dateCreated: {
     type: Date,
     default: Date.now(),
@@ -48,7 +51,7 @@ systemSchema.statics.createSystem = async function (userId, name) {
   if (!user) {
     throw new Error('User not found');
   }
-  const system = await this.create({ name, users: [userId], owner: userId, ownerName: user.username });
+  const system = await this.create({ name, users: [userId], owner: userId, ownerName: user.username, ownerPhoneNumber: user.phoneNumber });
   user.systems.push(system._id);
   await user.save();
   return system;
@@ -119,6 +122,12 @@ systemSchema.statics.getLastMessage = async function (userId) {
 
 systemSchema.statics.deleteLastMessage = async function (systems) {};
 
-
+// deletes a message from a system's message history
+systemSchema.statics.deleteMessage = async function (systemId, messageId) {
+  const system = await this.findById(String(systemId));
+  if (!system) throw new Error('System not found');
+  system.messageHistory = system.messageHistory.filter((message) => message.toString() !== messageId);
+  return system.save();
+};
 
 module.exports = mongoose.model('system', systemSchema);

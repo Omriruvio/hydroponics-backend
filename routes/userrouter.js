@@ -12,6 +12,7 @@ const {
 } = require('../controllers/users');
 const auth = require('../middlewares/auth');
 const handleIfImage = require('../middlewares/check-for-image');
+const setSelectedSystem = require('../middlewares/set-selected-system');
 const router = require('express').Router();
 const { verifyTwilioRequest } = require('../middlewares/validate-twilio-request');
 const { getPlantHealth } = require('../utils/get-plant-health');
@@ -23,10 +24,9 @@ router.get('/history/:phone/:days/:systemId', handleHistoryRequest);
 router.get('/me', auth, handleGetUser);
 router.post('/new-system', handleNewSystem);
 
-
 // incoming requests from twilio studio
 router.post('/identify', verifyTwilioRequest, handleTwilioAuth);
-router.post('/cropdata', verifyTwilioRequest, handleIfImage, getPlantHealth, handleCropData);
+router.post('/cropdata', verifyTwilioRequest, handleIfImage, getPlantHealth, setSelectedSystem, handleCropData);
 router.post('/delete-last', verifyTwilioRequest, handleDeleteLast);
 router.post('/mobilesignup', verifyTwilioRequest, handleMobileSignup);
 router.post('/help', verifyTwilioRequest, handleHelpRequest);
