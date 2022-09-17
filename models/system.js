@@ -23,33 +23,10 @@ const systemSchema = new mongoose.Schema({
     type: Date,
     default: Date.now(),
   },
-  messageHistory: [
-    {
-      user: { type: mongoose.Types.ObjectId, ref: 'user' },
-      imageUrl: String,
-      dateReceived: { type: Date, default: Date.now() },
-      messageBody: { type: String },
-      temperature: { type: String },
-      humidity: { type: String },
-      ph: { type: String },
-      ec: { type: String },
-      handled: { type: Boolean, default: false },
-      healthState: {
-        isHealthy: {
-          type: String,
-          enum: ['positive', 'likely-positive', 'likely-negative', 'negative'],
-        },
-        hasPestPresence: {
-          type: String,
-          enum: ['positive', 'likely-positive', 'likely-negative', 'negative'],
-        },
-        hasDeficiencies: {
-          type: String,
-          enum: ['positive', 'likely-positive', 'likely-negative', 'negative'],
-        },
-      },
-    },
-  ],
+  messageHistory: {
+    type: [mongoose.Types.ObjectId],
+    ref: 'message',
+  },
   users: {
     type: [mongoose.Types.ObjectId],
     ref: 'user',
@@ -82,20 +59,20 @@ systemSchema.statics.createSystem = async function (userId, name) {
  * Receives system id and an object with the following properties:
  * { temperature, humidity, ph, ec, imageUrl, healthState, messageBody }
  * @param {string} systemId - The id of the system to add the message to.
- * @param {object} message - The message to add to the system's message history.
+ * @param {object} messageId - The message id to add to the system's message history.
  * @returns {Promise<System>} A promise that resolves with the system
  * if the message is added successfully, otherwise rejects with an error.
  * @throws {Error} If the system is not found.
  * @throws {Error} If the message is not valid.
  */
 
-systemSchema.statics.addCropData = function (systemId, message) {
+systemSchema.statics.addCropData = function (systemId, messageId) {
   return this.findById(systemId)
     .then((system) => {
       if (!system) {
         throw new Error('System not found');
       }
-      system.messageHistory.push(message);
+      system.messageHistory.push(messageId);
       return system.save();
     })
     .catch((err) => {
@@ -120,45 +97,27 @@ systemSchema.statics.addUser = async function (systemId, userId) {
 };
 
 /**
- * Receives user.systems - array of system ids, returns the most recent message out of all latest systems messages
+ * Receives user id, searches through the messages of all the systems to find messages whose user is equal to the user id.
+ * Returns the most recently received message.
+ * if no messages exist, returns null
  */
 
-systemSchema.statics.getLastMessage = async function (systems) {
-  // make an array of all the latest messages from each system
-  // find the most recent message out of all the latest messages
-  const latestMessages = await Promise.all(
-    systems.map(async (system) => {
-      const systemMessages = await this.findById(system).select('messageHistory');
-      const latestMessage = systemMessages.messageHistory[systemMessages.messageHistory.length - 1];
-      return latestMessage;
-    })
-  );
-  const mostRecentMessage = latestMessages.reduce((acc, curr) => 
-    acc.dateReceived > curr.dateReceived ? acc : curr);
-  
-  return mostRecentMessage || null;
+systemSchema.statics.getLastMessage = async function (userId) {
+  // make an array by finding all messageHistory messages from all systems with user field equal to userId
+  const messages = await this.find({ 'messageHistory.user': userId }, { 'messageHistory.$': 1 });
+  // sort the array by dateReceived
+  messages.sort((a, b) => {
+    return b.messageHistory[0].dateReceived - a.messageHistory[0].dateReceived;
+  });
+  // return the first element of the array
+  return messages[0];
 };
 
 /**
  * Receives user.systems - array of system ids, finds the system with the most recent message and deletes it
  */
 
-systemSchema.statics.deleteLastMessage = async function (systems) {
-  const latestMessages = await Promise.all(
-    systems.map(async (system) => {
-      const systemMessages = await this.findById(system).select('messageHistory');
-      const latestMessage = systemMessages.messageHistory[systemMessages.messageHistory.length - 1];
-      return latestMessage;
-    })
-  );
-  
-  const mostRecentMessage = latestMessages.reduce((acc, curr) => 
-    acc.dateReceived > curr.dateReceived ? acc : curr);
-  
-  const system = await this.findById(mostRecentMessage._id);
-  system?.messageHistory?.pop();
-  return system ? system.save() : null;
-};
+systemSchema.statics.deleteLastMessage = async function (systems) {};
 
 
 

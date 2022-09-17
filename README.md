@@ -24,9 +24,10 @@ To install this project run
 ```
     
 ## Deployment
-- Requires backend deployment - see here: https://github.com/Omriruvio/hydroponics-backend
+- Requires frontend deployment - see here: https://github.com/Omriruvio/hydroponics-frontend
 - Requires mongoDB to be installed on the deployment OS
 - Requires environment variables to be set up
+- Requires Twilio, Twilio Studio flow, and linking the various keys to the environemnt variables
 
 #### Local/dev deployment:
 ```bash
@@ -73,6 +74,10 @@ To run this project, you will need to add the following environment variables to
 `CLOUDINARY_API_SECRET` - From Cloudinary
 
 `JWT_SECRET` - Secret key for JWT encryption
+
+Additionally for Whatsapp message flow to work - Twilio must be set up with a studio flow with the following varialbes:
+
+`BASE_URL` - Pointing to the correct server IP/URL
 ## Author - contact
 
 - [Github - Omri Ruvio](https://www.github.com/omriruvio)
@@ -82,8 +87,13 @@ To run this project, you will need to add the following environment variables to
 
 ## Running Tests
 
-To run tests, run the following command
+To run unit and end to end tests, run the following command:
 
 ```bash
   npm run test
 ```
+
+To test twilio flow, log in to the twilio studio page:
+
+- Add your phone number to is_testing_number value checks
+- Change the BASE_URL parameter to point to your local environment (set up with ngrok for example)

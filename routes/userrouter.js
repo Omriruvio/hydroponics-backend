@@ -19,7 +19,7 @@ const { getPlantHealth } = require('../utils/get-plant-health');
 // incoming web application requests
 router.post('/register', handleSignup);
 router.post('/login', handleLogin);
-router.get('/history/:phone/:days', handleHistoryRequest);
+router.get('/history/:phone/:days/:systemId', handleHistoryRequest);
 router.get('/me', auth, handleGetUser);
 router.post('/new-system', handleNewSystem);
 

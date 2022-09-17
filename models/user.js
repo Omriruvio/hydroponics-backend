@@ -48,32 +48,7 @@ const userSchema = new mongoose.Schema({
     type: [mongoose.Types.ObjectId],
     ref: 'system',
   },
-  messageHistory: [
-    {
-      imageUrl: String,
-      dateReceived: { type: Date, default: Date.now() },
-      messageBody: { type: String },
-      temperature: { type: String },
-      humidity: { type: String },
-      ph: { type: String },
-      ec: { type: String },
-      handled: { type: Boolean, default: false },
-      healthState: {
-        isHealthy: {
-          type: String,
-          enum: ['positive', 'likely-positive', 'likely-negative', 'negative'],
-        },
-        hasPestPresence: {
-          type: String,
-          enum: ['positive', 'likely-positive', 'likely-negative', 'negative'],
-        },
-        hasDeficiencies: {
-          type: String,
-          enum: ['positive', 'likely-positive', 'likely-negative', 'negative'],
-        },
-      },
-    },
-  ],
+  messageHistory: [{ type: mongoose.Types.ObjectId, ref: 'message' }],
 });
 
 /**
@@ -91,23 +66,35 @@ userSchema.statics.getMessageHistoryFrom = async function (phoneNumber, toDate, 
   fromDate.setDate(fromDate.getDate() - dayOffset);
   const inDateRange = (message) => message.dateReceived >= fromDate && message.dateReceived <= toDate;
 
-  // if no systemId is provided, check if the user has a default system, if they do, return the messages from the user's message history and the messages from the default system message history. if the user default system is not valid, return the user's message history.
+  // if no systemId is provided, return all user messages from user messageHistory
   if (!systemId) {
-    const user = await this.findOne({ phoneNumber });
+    const user = await this.findOne({ phoneNumber }).populate('messageHistory');
     if (!user) throw new Error('User not found');
-    const userMessageHistory = user.messageHistory.filter(inDateRange);
-    if (user.defaultSystem) {
-      const system = await System.findById(user.defaultSystem);
-      if (!system) return userMessageHistory;
-      return [...userMessageHistory, ...system.messageHistory.filter(inDateRange)];
-    }
-    return userMessageHistory;
+    return user.messageHistory.filter(inDateRange);
   }
-  // get system message history
-  const system = await System.findById(systemId);
+
+  // if a systemId is provided, return all messages from the system's messageHistory
+  const system = await System.findById(systemId).populate('messageHistory');
   if (!system) throw new Error('System not found');
   return system.messageHistory.filter(inDateRange);
 };
+
+// // if no systemId is provided, check if the user has a default system, if they do, return the messages from the user's message history and the messages from the default system message history. if the user default system is not valid, return the user's message history.
+// if (!systemId) {
+//   const user = await this.findOne({ phoneNumber });
+//   if (!user) throw new Error('User not found');
+//   const userMessageHistory = user.messageHistory.filter(inDateRange);
+//   if (user.defaultSystem) {
+//     const system = await System.findById(user.defaultSystem);
+//     if (!system) return userMessageHistory;
+//     return [...userMessageHistory, ...system.messageHistory.filter(inDateRange)];
+//   }
+//   return userMessageHistory;
+// }
+// // get system message history
+// const system = await System.findById(systemId);
+// if (!system) throw new Error('System not found');
+// return system.messageHistory.filter(inDateRange);
 
 /**
  *
@@ -157,8 +144,19 @@ userSchema.statics.addSystem = async function (userId, systemId) {
   return user.save();
 };
 
+userSchema.statics.deleteLastMessage = async function (userId) {
+  const user = await this.findById(userId);
+  if (!user) throw new Error('User not found');
+  user.messageHistory.pop();
+  return user.save();
+};
 
-
- 
+// add a message to the user's message history
+userSchema.statics.addMessage = async function (userId, messageId) {
+  const user = await this.findById(userId);
+  if (!user) throw new Error('User not found');
+  user.messageHistory.push(messageId);
+  return user.save();
+};
 
 module.exports = mongoose.model('user', userSchema);

@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const { DEFAULT_HELP_MESSAGE } = require('../config');
 const User = require('../models/user');
+const Message = require('../models/message');
 const { getImageResponseMessage } = require('../utils/get-image-response-message');
 const parseCropData = require('../utils/parsecorpdata.js');
 const getResponseMessage = require('../utils/response-text');
@@ -102,12 +103,12 @@ const handleCropData = async (req, res, next) => {
     const { temperature, humidity, ph, ec } = parseCropData(messageBody);
     const { responseMessage: imageResponseMessage, healthState } = getImageResponseMessage(plantHealth);
     const responseMessage = imageUrl ? imageResponseMessage : getResponseMessage({ temperature, humidity, ph, ec });
-    const messageData = { temperature, humidity, ph, ec, imageUrl, healthState, messageBody };
     const user = await User.findOne({ phoneNumber });
     if (!user) {
       res.status(204).send();
       return;
     }
+    const messageData = { temperature, humidity, ph, ec, imageUrl, healthState, messageBody, user: user._id };
 
     // const systemId = systemName ? user.systems.find((system) => system.name === systemName)._id : user.defaultSystem ? user.defaultSystem._id : (await System.createSystem(user._id)._id);
     let systemId;
@@ -120,10 +121,16 @@ const handleCropData = async (req, res, next) => {
       await User.findByIdAndUpdate(user._id, { defaultSystem: systemId });
     }
 
-    await System.addCropData(systemId, messageData);
+    // create message in the message collection
+    const message = await Message.addMessage(messageData);
+    // add message to the system
+    await System.addCropData(systemId, message._id);
+    // add message to the user
+    await User.addMessage(user._id, message._id);
+
     await User.setLastInteraction(phoneNumber);
     if (NODE_ENV === 'test') {
-      res.send({ status: 'ok', message: 'Test crop data processed.' });
+      res.send({ status: 'ok', message: 'Test crop data processed.', messageId: message._id });
       return;
     }
     await sendWhatsappMessage(phoneNumber, responseMessage);
@@ -134,61 +141,55 @@ const handleCropData = async (req, res, next) => {
 };
 
 const handleDeleteLast = async (req, res, next) => {
-  // finds the user by phone number and deletes the last crop data entry
-  // finds the latest message from the combination of both the users message history and the users' systems message histories
+  // finds the latest message sent by the user in the messages collection
   // if NODE_ENV is test, returns a 200 status code and a message after deleting the last entry
   // if NODE_ENV is not test, sends a twilio whatsapp message to the user and returns a 200 status code
   // if modifiedCount is 0, returns a 204 status code and a message saying "We have found nothing to delete."
   // if a message was successfully deleted and NODE_ENV is not test, returns a 200 status code and a message saying "Your last message was deleted."
-
-  // find the last message the user sent between their own message history and their systems' message histories
   try {
     const { phoneNumber } = req.body;
     const user = await User.findOne({ phoneNumber });
-    if (!user) res.status(204).send({ message: 'User not found.' });
-    const lastSystemsMessage = await System.getLastMessage(user.systems);
-    const lastUserMessage = user.messages?.[user.messages?.length - 1] || { createdAt: 0 };
-    if (!lastSystemsMessage || lastUserMessage.createdAt > lastSystemsMessage.createdAt) {
-      const deletedMessage = user.messages.pop();
-      await User.findByIdAndUpdate(user._id, { messages: user.messages });
-      if (NODE_ENV === 'test') {
-        res.send({ status: 'ok', message: 'Test message deleted.' });
-        return;
-      }
-      await sendWhatsappMessage(phoneNumber, `Your last message was deleted: ${deletedMessage.messageBody || deletedMessage.imageUrl || ''}`);
-      res.status(200).send({ message: 'Your last message was deleted.' });
-    } else if (lastSystemsMessage) {
-      const deletedMessage = await System.deleteLastMessage(user.systems);
-      if (NODE_ENV === 'test') {
-        res.send({ status: 'ok', message: 'Test message deleted.' });
-        return;
-      }
-      await sendWhatsappMessage(phoneNumber, `Your last message was deleted: ${deletedMessage.messageBody || deletedMessage.imageUrl || ''}`);
-      res.status(200).send({ message: 'Your last message was deleted.' });
-    } else {
-      res.status(204).send({ message: 'We have found nothing to delete.' });
+    if (!user) return res.status(204).send({ message: 'User not found' });
+
+    const deletedMessage = await Message.deleteLastMessage(user._id);
+    if (!deletedMessage) {
+      sendWhatsappMessage(phoneNumber, 'We have found nothing to delete.');
+      return res.status(204).send({ message: 'We have found nothing to delete.' });
     }
+
+    if (NODE_ENV === 'test') {
+      res.send({ status: 'ok', message: 'Test last message deleted.' });
+      return;
+    }
+
+    // make a messageResponseSuffix variable containing either deletedMessage.messageBody if it exists or deletedMessage.imageUrl if it exists otherwise an empty string
+    let messageResponseSuffix = '';
+    if (deletedMessage.messageBody) messageResponseSuffix = deletedMessage.messageBody;
+    if (deletedMessage.imageUrl) messageResponseSuffix = deletedMessage.imageUrl;
+
+    await sendWhatsappMessage(phoneNumber, 'Your last message was deleted. \n' + messageResponseSuffix);
+    res.status(200).send({ message: 'Your last message was deleted.' });
   } catch (err) {
     next(err);
   }
 };
 
-  // const { phoneNumber } = req.body;
-  // User.updateOne({ phoneNumber }, { $pop: { messageHistory: 1 } })
-  //   .then((message) => {
-  //     if (NODE_ENV === 'test') {
-  //       res.send({ status: 'ok', message: 'Delete request received.' });
-  //       return;
-  //     }
-  //     if (message.modifiedCount === 0) {
-  //       const responseMessage = 'We have found nothing to delete.';
-  //       sendWhatsappMessage(phoneNumber, responseMessage).then(() => res.status(200).send({ responseMessage }));
-  //     } else {
-  //       const responseMessage = 'Latest data submission has been deleted.';
-  //       sendWhatsappMessage(phoneNumber, responseMessage).then(() => res.status(200).send({ responseMessage }));
-  //     }
-  //   })
-  //   .catch(next);
+// const { phoneNumber } = req.body;
+// User.updateOne({ phoneNumber }, { $pop: { messageHistory: 1 } })
+//   .then((message) => {
+//     if (NODE_ENV === 'test') {
+//       res.send({ status: 'ok', message: 'Delete request received.' });
+//       return;
+//     }
+//     if (message.modifiedCount === 0) {
+//       const responseMessage = 'We have found nothing to delete.';
+//       sendWhatsappMessage(phoneNumber, responseMessage).then(() => res.status(200).send({ responseMessage }));
+//     } else {
+//       const responseMessage = 'Latest data submission has been deleted.';
+//       sendWhatsappMessage(phoneNumber, responseMessage).then(() => res.status(200).send({ responseMessage }));
+//     }
+//   })
+//   .catch(next);
 
 const handleHelpRequest = (req, res, next) => {
   const { phoneNumber } = req.body;
@@ -209,14 +210,16 @@ const handleHelpRequest = (req, res, next) => {
 const handleHistoryRequest = (req, res, next) => {
   //expects phoneNumber in the format of 'whatsapp:+972xxxxxxxxx'
   const phoneNumber = req.params.phone;
+  const dayCount = req.params.days;
+  const systemId = req.params.systemId === 'undefined' ? undefined : req.params.systemId;
   const isWhatsappNumber = phoneNumber.startsWith('whatsapp:');
   const whatsappConvertedNumber = isWhatsappNumber ? phoneNumber : `whatsapp:+972${String(+phoneNumber)}`;
-  const dayCount = req.params.days;
   const toDate = new Date();
   // receives whatsapp number, to date, number of days to go back, and optional systemId (otherwise defaults to default system)
-  User.getMessageHistoryFrom(whatsappConvertedNumber, toDate, dayCount)
+  User.getMessageHistoryFrom(whatsappConvertedNumber, toDate, dayCount, systemId)
     .then((history) => {
-      res.send(history);
+      if (history.length === 0) res.status(204).send();
+      else res.send(history);
     })
     .catch(next);
 };

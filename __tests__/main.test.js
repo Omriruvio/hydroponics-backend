@@ -4,6 +4,8 @@ const app = require('../server.js');
 const supertest = require('supertest');
 const { DEFAULT_HELP_MESSAGE } = require('../config.js');
 const { addSupervisor } = require('../utils/add-supervisor.js');
+const User = require('../models/user');
+const Message = require('../models/message');
 const request = supertest(app);
 
 const mockUser = {
@@ -64,6 +66,7 @@ let supervisorToken;
 let systemsCollection;
 let testSystemCollectionId;
 let mockUserId;
+let messageCollection;
 
 beforeAll(async () => {
   connection = await MongoClient.connect(process.env.MONGODB_URI, {
@@ -75,6 +78,7 @@ beforeAll(async () => {
   mainCollection = db.collection('users');
   superCollection = db.collection('supervisors');
   systemsCollection = db.collection('systems');
+  messageCollection = db.collection('messages');
   await addSupervisor(mockSupervisor);
   await user.insertOne(mockUser);
   await systemsCollection.deleteMany({ ownerName: 'mock-user' });
@@ -168,11 +172,10 @@ describe('Testing endpoints', () => {
   it('Should successfully post a crop data message', async () => {
     const response = await request.post('/cropdata').send(mockCropDataMessage);
     expect(response.body.status).toBe('ok');
-    const insertedUser = await mainCollection.findOne({ phoneNumber: mockUser.phoneNumber });
-    const systemId = insertedUser.systems[0];
-    const system = await db.collection('systems').findOne({ _id: systemId });
-    const message = system.messageHistory.find((msg) => msg.messageBody === defaultMessage);
-    expect(message.messageBody).toBe(defaultMessage);
+    expect(response.body.messageId).toBeTruthy();
+    const lastMessage = await Message.findOne({ phoneNumber: mockUser.phoneNumber }).sort({ _id: -1 });
+    expect(String(lastMessage.user)).toEqual(mockUser._id);
+    expect(lastMessage).toBeTruthy();
   });
 
   it('Should successfully respond to request for help', async () => {
@@ -182,7 +185,7 @@ describe('Testing endpoints', () => {
   });
 
   it('Should respond for message history (web route - plain phone number w/o prefix)', async () => {
-    const response = await request.get(`/history/0587411121/1`).send({ ...mockUser, phoneNumber: '0587411121' });
+    const response = await request.get(`/history/0587411121/1/undefined`).send({ ...mockUser, phoneNumber: '0587411121' });
     expect(response.body.length).toBe(1);
   });
 
@@ -203,7 +206,9 @@ describe('Testing endpoints', () => {
   it('Should successfully delete last crop data message', async () => {
     const response = await request.post('/delete-last').send(mockUser);
     expect(response.body.status).toBe('ok');
-    const insertedUser = await mainCollection.findOne({ phoneNumber: mockUser.phoneNumber });
+
+    const insertedUser = await User.findOne({ phoneNumber: mockUser.phoneNumber }).populate('messageHistory');
+    console.log('message history after delete', insertedUser.messageHistory);
     expect(insertedUser.messageHistory.at(-1)).toBeFalsy();
   });
 

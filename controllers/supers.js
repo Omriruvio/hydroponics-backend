@@ -59,6 +59,7 @@ const getAdminDetails = (req, res, next) => {
   supervisor
     .findById(userId)
     .then((admin) => {
+      if (!admin) res.status(401).send({ message: 'Unauthorized' });
       res.send({ email: admin.email, name: admin.username });
     })
     .catch(next);

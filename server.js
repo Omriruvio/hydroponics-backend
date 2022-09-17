@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 const { errorLogger, requestLogger } = require('./middlewares/logger');
 const app = express();
 const port = process.env.PORT || 3000;
-const { MONGODB_URI } = process.env;
+const { MONGODB_URI, NODE_ENV } = process.env;
 const incomingRoute = require('./routes/incoming');
 const userRoute = require('./routes/userrouter');
 const superRoute = require('./routes/superrouter');
@@ -46,9 +46,9 @@ app.use((err, req, res, next) => {
   res.status(err.statusCode || 500).send({ message: err.message || 'Internal server error.' });
 });
 
-if (process.env.NODE_ENV !== 'test') {
+if (NODE_ENV !== 'test') {
   // schedules push notification to inactive users
-  scheduler.addSimpleIntervalJob(pollForPushNotification);
+  NODE_ENV !== 'DEV' && scheduler.addSimpleIntervalJob(pollForPushNotification);
   app.listen(port, () => {
     console.log(`Hydroponics app listening at ${port}`);
   });
