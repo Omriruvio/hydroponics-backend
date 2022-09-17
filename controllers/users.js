@@ -117,7 +117,7 @@ const handleCropData = async (req, res, next) => {
     if (!systemId && user.defaultSystem) systemId = String(user.defaultSystem);
     if (!systemId) {
       console.log('creating default system for user name: ', user.username, 'user id: ', user._id);
-      const system = await System.createSystem(user._id);
+      const system = await System.createSystem(user._id, 'default');
       systemId = system._id;
       await User.findByIdAndUpdate(user._id, { defaultSystem: systemId });
     }

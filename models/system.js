@@ -37,7 +37,7 @@ const systemSchema = new mongoose.Schema({
 });
 
 /**
- * Creates a new system. If no name is provided, the system will be named after its id.
+ * Creates a new system. If no name is provided, the system will be given a unique name-id.
  * also adds the system to the user's list of systems
  * @param {string} userId - The id of the user creating the system.
  * @param {string} name - The name of the system.
@@ -51,7 +51,18 @@ systemSchema.statics.createSystem = async function (userId, name) {
   if (!user) {
     throw new Error('User not found');
   }
-  const system = await this.create({ name, users: [userId], owner: userId, ownerName: user.username, ownerPhoneNumber: user.phoneNumber });
+
+  // check if the user already has a system with the same name, if so, append _<number> to the name until it is unique
+  let systemName = name;
+  let systemNameExists = user.systems.find((system) => system.name === systemName);
+  let i = 1;
+  while (systemNameExists) {
+    systemName = `${name}_${i}`;
+    systemNameExists = user.systems.find((system) => system.name === systemName);
+    i++;
+  }
+
+  const system = await this.create({ name: systemName, users: [userId], owner: userId, ownerName: user.username, ownerPhoneNumber: user.phoneNumber });
   user.systems.push(system._id);
   await user.save();
   return system;
