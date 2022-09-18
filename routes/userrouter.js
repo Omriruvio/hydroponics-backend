@@ -20,6 +20,7 @@ const { verifyTwilioRequest } = require('../middlewares/validate-twilio-request'
 const { getPlantHealth } = require('../utils/get-plant-health');
 const isMobileRequest = require('../middlewares/is-mobile-request');
 const createNewSystem = require('../middlewares/create-new-system');
+const getUserSystems = require('../middlewares/get-user-systems');
 
 // incoming web application requests
 router.post('/register', handleSignup);
@@ -31,7 +32,17 @@ router.post('/new-system', handleNewSystem);
 
 // incoming requests from twilio studio
 router.post('/identify', verifyTwilioRequest, handleTwilioAuth);
-router.post('/cropdata', verifyTwilioRequest, handleIfImage, getPlantHealth, createNewSystem, selectDefaultSystem, setSelectedSystem, handleCropData);
+router.post(
+  '/cropdata',
+  verifyTwilioRequest,
+  handleIfImage,
+  getPlantHealth,
+  createNewSystem,
+  selectDefaultSystem,
+  setSelectedSystem,
+  getUserSystems,
+  handleCropData
+);
 router.post('/delete-last', verifyTwilioRequest, handleDeleteLast);
 router.post('/mobilesignup', verifyTwilioRequest, handleMobileSignup);
 router.post('/help', verifyTwilioRequest, handleHelpRequest);

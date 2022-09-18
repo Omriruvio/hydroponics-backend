@@ -136,7 +136,6 @@ const handleCropData = async (req, res, next) => {
       return;
     }
 
-    console.log('Created message: ', message);
     await sendWhatsappMessage(phoneNumber, responseMessage);
     res.status(200).send({ responseMessage });
   } catch (err) {
@@ -225,7 +224,7 @@ const handleNewSystem = async (req, res, next) => {
   }
   const system = await System.createSystem(user._id, systemName);
   await User.addSystem(user._id, system._id);
-  if (req.isMobileRequest) sendWhatsappMessage(phoneNumber, `System ${systemName} created.`);
+  if (req.isMobileRequest) sendWhatsappMessage(phoneNumber, `System ${system.name} created.`);
   res.status(200).send({ systemId: system._id });
 };
 

@@ -45,6 +45,13 @@ const systemSchema = new mongoose.Schema({
  * if it is created successfully, otherwise rejects with an error.
  */
 
+// (async () => {
+//   const System = mongoose.model('system', systemSchema);
+//   // const arrayOfSystemNames = await System.find({ owner: '6326525d1fcd5281f316c40a' }, { name: 1 });
+//   const arrayOfSystemNames = await System.find({ owner: '6326525d1fcd5281f316c40a' }, { name: -1 });
+//   console.log(arrayOfSystemNames);
+// })();
+
 systemSchema.statics.createSystem = async function (userId, name) {
   const User = require('./user');
   const user = await User.findById(userId);
@@ -54,7 +61,9 @@ systemSchema.statics.createSystem = async function (userId, name) {
 
   // check if the user already has a system with the same name, if so, append _<number> to the name until it is unique
   let systemName = name;
-  let systemNameExists = user.systems.find((system) => system.name === systemName);
+  const arrayOfSystemNames = await this.find({ owner: userId }, { name: 1 });
+  let systemNameExists = arrayOfSystemNames.some((system) => system.name === systemName);
+
   let i = 1;
   while (systemNameExists) {
     systemName = `${name}_${i}`;
@@ -62,7 +71,13 @@ systemSchema.statics.createSystem = async function (userId, name) {
     i++;
   }
 
-  const system = await this.create({ name: systemName, users: [userId], owner: userId, ownerName: user.username, ownerPhoneNumber: user.phoneNumber });
+  const system = await this.create({
+    name: systemName,
+    users: [userId],
+    owner: userId,
+    ownerName: user.username,
+    ownerPhoneNumber: user.phoneNumber,
+  });
   user.systems.push(system._id);
   await user.save();
   return system;

@@ -26,7 +26,8 @@ module.exports.DEFAULT_HELP_MESSAGE =
   `*'delete'* - Remove latest crop data submission\n` +
   `*'create system <system-name>'* - Create a new system\n` +
   `*'system <system-name> <data>'* - Submit crop data for a specific system\n` +
-  `*'default system <system-name>'* - Set a default system for crop data submission\n`;
+  `*'default system <system-name>'* - Set a default system for crop data submission\n` +
+  `*'my systems'* - List all your systems`;
 
 module.exports.PROBABILITY = {
   VERY_LOW: 0.25,

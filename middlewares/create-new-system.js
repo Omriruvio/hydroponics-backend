@@ -24,7 +24,7 @@ const createNewSystem = async (req, res, next) => {
       const createdSystem = await System.createSystem(user._id, systemName);
 
       if (createdSystem) {
-        sendWhatsappMessage(phoneNumber, `System "${systemName}" created successfully`);
+        sendWhatsappMessage(phoneNumber, `System "${createdSystem.name}" created successfully`);
         res.status(200).send({ message: 'System created successfully', systemId: createdSystem._id });
       } else {
         sendWhatsappMessage(phoneNumber, `System "${systemName}" not created`);
