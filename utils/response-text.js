@@ -3,7 +3,7 @@ const emptyDataReponse =
   'Please submit data in the following format:\n' +
   '"*_temp_* value *_humidity_* value *_ph_* value *_ec_* value".\n' +
   'If further help is needed respond with "help".';
-const responseMessageIntro = '*Recorded data:*\n';
+const responseMessageIntro = '*Recorded data for system - ';
 const responseMessageOutro = '\n\nIf the above information is incorrect, you may reply with "delete".\n';
 
 /**
@@ -13,7 +13,7 @@ const responseMessageOutro = '\n\nIf the above information is incorrect, you may
  *
  */
 
-const getResponseMessage = (data) => {
+const getResponseMessage = (data, systemName) => {
   if (Object.values(data).every((value) => !value)) return emptyDataReponse;
   let responseMessageBody = '';
   for (const [key, value] of Object.entries(data)) {
@@ -23,7 +23,7 @@ const getResponseMessage = (data) => {
     }
   }
 
-  return responseMessageIntro + responseMessageBody + responseMessageOutro;
+  return responseMessageIntro + systemName + ':' + '*\n' + responseMessageBody + responseMessageOutro;
 };
 
 module.exports = getResponseMessage;

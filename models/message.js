@@ -68,6 +68,7 @@ const messageSchema = new mongoose.Schema({
  */
 
 messageSchema.statics.addMessage = async function (message, systemId) {
+  if (!message.messageBody && !message.imageUrl) throw new Error('Message must have either a message body or an image url');
   const Message = require('./message');
   const User = require('./user');
   const user = await User.findById(message.user);

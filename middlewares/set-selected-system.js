@@ -6,23 +6,35 @@ const User = require('../models/user');
 const { sendWhatsappMessage } = require('../utils/send-twilio-message');
 
 module.exports = async (req, res, next) => {
-  if (req.body.messageBody.startsWith('system')) {
-    const { messageBody } = req.body;
-    const { phoneNumber } = req.body;
-    const systemName = messageBody.split(' ')[1];
+  try {
+    if (req.body.messageBody.startsWith('system')) {
+      const { messageBody } = req.body;
+      const { phoneNumber } = req.body;
+      const systemName = messageBody.split(' ')[1].toLowerCase();
 
-    const user = await User.findOne({ phoneNumber }).populate('systems');
-    const systemId = user.systems.find((system) => system.name === systemName)?._id;
+      if (!systemName) {
+        sendWhatsappMessage(phoneNumber, `Please follow the format: system <system-name>`);
+        return res.status(204).send({ message: 'Please follow the format: system <system-name>' });
+      }
 
-    if (systemId) {
-      req.selectedSystem = systemId;
-      req.body.messageBody = messageBody.replace(`system ${systemName}`, '').trim();
-      next();
+      const user = await User.findOne({ phoneNumber }).populate('systems');
+      const systemId = user.systems.find((system) => system.name === systemName)?._id;
+
+      if (systemId) {
+        req.selectedSystem = systemId;
+        req.body.messageBody = messageBody.replace(`system ${systemName}`, '').trim();
+        next();
+      } else {
+        sendWhatsappMessage(
+          phoneNumber,
+          `System "${systemName}" not found in your systems list.\nPlease follow the format: system <system-name> <data>`
+        );
+        res.status(204).send({ message: 'System name not found in the user systems' });
+      }
     } else {
-      sendWhatsappMessage(phoneNumber, `System ${systemName} not found in your systems list.\nPlease follow the format: system <system-name> <data>`);
-      res.status(204).send({ message: 'System name not found in the user systems' });
+      next();
     }
-  } else {
-    next();
+  } catch (error) {
+    next(error);
   }
 };

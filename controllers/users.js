@@ -40,7 +40,7 @@ const handleMobileSignup = (req, res, next) => {
 const handleGetUser = (req, res, next) => {
   const { _id } = req.user;
   User.findById(_id)
-    .orFail(() => next(new Error('User not found!')))
+    .orFail(() => res.status(404).send({ message: 'User not found' }))
     .then((user) => {
       res.send(user);
     })
@@ -103,7 +103,6 @@ const handleCropData = async (req, res, next) => {
     const { phoneNumber, messageBody, imageUrl, plantHealth /* , systemName */ } = req.body;
     const { temperature, humidity, ph, ec } = parseCropData(messageBody);
     const { responseMessage: imageResponseMessage, healthState } = getImageResponseMessage(plantHealth);
-    const responseMessage = imageUrl ? imageResponseMessage : getResponseMessage({ temperature, humidity, ph, ec });
     const user = await User.findOne({ phoneNumber });
     if (!user) {
       res.status(204).send();
@@ -121,6 +120,8 @@ const handleCropData = async (req, res, next) => {
       systemId = system._id;
       await User.findByIdAndUpdate(user._id, { defaultSystem: systemId });
     }
+    const systemName = await System.findById(systemId).then((system) => system.name);
+    const responseMessage = imageUrl ? imageResponseMessage : getResponseMessage({ temperature, humidity, ph, ec }, systemName);
 
     // create message in the message collection
     const message = await Message.addMessage(messageData, systemId);
@@ -181,23 +182,6 @@ const handleDeleteLast = async (req, res, next) => {
   }
 };
 
-// const { phoneNumber } = req.body;
-// User.updateOne({ phoneNumber }, { $pop: { messageHistory: 1 } })
-//   .then((message) => {
-//     if (NODE_ENV === 'test') {
-//       res.send({ status: 'ok', message: 'Delete request received.' });
-//       return;
-//     }
-//     if (message.modifiedCount === 0) {
-//       const responseMessage = 'We have found nothing to delete.';
-//       sendWhatsappMessage(phoneNumber, responseMessage).then(() => res.status(200).send({ responseMessage }));
-//     } else {
-//       const responseMessage = 'Latest data submission has been deleted.';
-//       sendWhatsappMessage(phoneNumber, responseMessage).then(() => res.status(200).send({ responseMessage }));
-//     }
-//   })
-//   .catch(next);
-
 const handleHelpRequest = (req, res, next) => {
   const { phoneNumber } = req.body;
   const responseMessage = DEFAULT_HELP_MESSAGE;
@@ -232,7 +216,8 @@ const handleHistoryRequest = (req, res, next) => {
 };
 
 const handleNewSystem = async (req, res, next) => {
-  const { phoneNumber, systemName } = req.body;
+  const phoneNumber = req.body.phoneNumber || req.whatsappPhoneNumber;
+  const systemName = req.body.systemName?.toLowerCase() || req.systemName?.toLowerCase();
   const user = await User.findOne({ phoneNumber });
   if (!user) {
     res.status(204).send();
@@ -240,7 +225,26 @@ const handleNewSystem = async (req, res, next) => {
   }
   const system = await System.createSystem(user._id, systemName);
   await User.addSystem(user._id, system._id);
+  if (req.isMobileRequest) sendWhatsappMessage(phoneNumber, `System ${systemName} created.`);
   res.status(200).send({ systemId: system._id });
+};
+
+const setDefaultSystem = async (req, res, next) => {
+  // expects phoneNumber and systemId in the body
+  const phoneNumber = req.body.phoneNumber || req.whatsappPhoneNumber;
+  const systemId = req.body.systemId || req.systemId;
+  await User.setDefaultSystem(phoneNumber, systemId);
+  if (req.isMobileRequest) sendWhatsappMessage(phoneNumber, 'Default system set.');
+  res.status(200).send({ message: 'Default system set.' });
+};
+
+const getAllUserSystems = async (req, res, next) => {
+  // expects phoneNumber in the body
+  const phoneNumber = req.body.phoneNumber || req.whatsappPhoneNumber;
+  const user = await User.findOne({ phoneNumber });
+  if (!user) return res.status(204).send({ message: 'User not found' });
+  const systems = await System.find({ _id: { $in: user.systems } });
+  res.status(200).send({ systems });
 };
 
 // Whatsapp interface:
@@ -259,4 +263,6 @@ module.exports = {
   handleCropData,
   handleGetUser,
   handleNewSystem,
+  setDefaultSystem,
+  getAllUserSystems,
 };

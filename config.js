@@ -24,7 +24,9 @@ module.exports.DEFAULT_HELP_MESSAGE =
   `*'help'* - For this reference sheet\n` +
   `*'dash/dashboard'* - Provides a link to your dashboard\n` +
   `*'delete'* - Remove latest crop data submission\n` +
-  `*'system <system-name> <data>'* - Submit crop data for a specific system\n`;
+  `*'create system <system-name>'* - Create a new system\n` +
+  `*'system <system-name> <data>'* - Submit crop data for a specific system\n` +
+  `*'default system <system-name>'* - Set a default system for crop data submission\n`;
 
 module.exports.PROBABILITY = {
   VERY_LOW: 0.25,
