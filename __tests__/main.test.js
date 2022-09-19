@@ -287,4 +287,33 @@ describe('Testing endpoints', () => {
     const response = await request.post('/cropdata').send({ phoneNumber: mockUser.phoneNumber, messageBody: 'my systems' });
     expect(response.body.systemNames).toBe('default, test-system, test-system2');
   });
+
+  // test renaming a system via route router.post('/system/mobile/rename', verifyTwilioRequest, renameSystem), receives messageBody 'rename <old-system-name> <new-system-name>'
+  it('Should rename a system', async () => {
+    const response = await request
+      .post('/system/mobile/rename')
+      .send({ phoneNumber: mockUser.phoneNumber, messageBody: 'rename test-system test-system-rename' });
+    expect(response.status).toBe(200);
+    const user = await User.findById(mockUser._id).populate('systems');
+    expect(user.systems.some((system) => system.name === 'test-system-rename')).toBeTruthy();
+  });
+
+  // test setting a system as public via mobile route via route router.post('/system/mobile/set-public', verifyTwilioRequest, setSystemPublic) receives messageBody parameter from the request body formatted as 'set public <system-name>'
+  it('Should set a system as public', async () => {
+    const response = await request
+      .post('/system/mobile/set-public')
+      .send({ phoneNumber: mockUser.phoneNumber, messageBody: 'set public test-system-rename' });
+    expect(response.status).toBe(200);
+    const system = await System.findById(mockSystemId);
+    expect(system.isPublic).toBeTruthy();
+  });
+
+  it('Should set a system as private', async () => {
+    const response = await request
+      .post('/system/mobile/set-private')
+      .send({ phoneNumber: mockUser.phoneNumber, messageBody: 'set private test-system-rename' });
+    expect(response.status).toBe(200);
+    const system = await System.findById(mockSystemId);
+    expect(system.isPublic).toBeFalsy();
+  });
 });

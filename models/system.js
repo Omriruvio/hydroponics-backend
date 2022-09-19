@@ -21,12 +21,12 @@ const systemSchema = new mongoose.Schema({
   isPublic: {
     type: Boolean,
     default: false,
-    // on change to true, check that the name is unique across all systems
+    // on change to true, check that the name is unique across all public systems
     validate: {
       validator: async function (isPublic) {
         if (isPublic) {
-          const system = await this.constructor.findOne({ name: this.name });
-          if (system) throw new Error('System name is not unique');
+          const system = await this.constructor.findOne({ name: this.name, isPublic: true });
+          if (system) throw new Error(`System name ${this.name} is already taken`);
         }
       },
       message: 'System name is not unique',
@@ -174,6 +174,8 @@ systemSchema.statics.deleteMessage = async function (systemId, messageId) {
  * Renames a system.
  * System name must be unique in the user's list of systems. If it is not unique a number will be appended similarly to createSystem.
  * If the system is public, the name must be unique across all systems, otherwise a new name will be created by appending a number similarly to createSystem, but on a global level.
+ * @param {string} systemId - The id of the system to rename.
+ * @param {string} newName - The new name of the system.
  */
 
 systemSchema.statics.renameSystem = async function (systemId, newName) {

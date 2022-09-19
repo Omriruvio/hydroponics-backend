@@ -98,20 +98,124 @@ const renameSystem = async (req, res, next) => {
 };
 
 /**
- * Sets a system as public
+ * Sets a system as public, either receives messageBody parameter from the request body formatted as 'set public <system-name>' or receives systemId parameter from the request body
  * Checks that the system name is publically unique and that the user is the system owner
  * If the system name is not unique, sends an error whatsapp message and response requesting a new request with a unique name
  * If the user does not own the system, sends an error whatsapp message and response
  */
 
-// const setSystemPublic = async (req, res, next) => {
-//   try {
-//     const { phoneNumber, messageBody } = req.body;
-//     const user = await User.findOne({ phoneNumber });
+const setSystemPublic = async (req, res, next) => {
+  // receives messageBody parameter from the request body formatted as 'set public <system-name>'
+  // or receives systemId parameter from the request body
+  try {
+    const { phoneNumber, messageBody } = req.body;
+    const user = await User.findOne({ phoneNumber });
+    if (messageBody?.startsWith('set public')) {
+      const systemName = messageBody.split(' ')[2]?.toLowerCase();
+      if (!systemName) {
+        sendWhatsappMessage(phoneNumber, `Please follow the format: set public <system-name>`);
+        return res.status(204).send({ message: 'Please follow the format: set public <system-name>' });
+      }
+      // check that the user owns the system by searching the users' systems array for the system name and checking that the systemOwner is the user
+      const system = await System.findOne({ name: systemName, owner: user._id });
+      if (!system) {
+        sendWhatsappMessage(phoneNumber, `System "${systemName}" does not exist or you do not own it`);
+        return res.status(204).send({ message: `System "${systemName}" does not exist or not owned by the user` });
+      }
+      // check all the systems except for the one being set as public to see if the name is unique
+      const publicSystems = await System.find({ isPublic: true });
+      const publicSystemNames = publicSystems.reduce((acc, currentSystem) => {
+        if (currentSystem._id.toString() !== system._id.toString()) {
+          acc.push(currentSystem.name);
+        }
+        return acc;
+      }, []);
+        
+      if (publicSystemNames?.includes(systemName)) {
+        sendWhatsappMessage(phoneNumber, `System name "${systemName}" is not unique, please choose a different name`);
+        return res.status(204).send({ message: `System name "${systemName}" is not unique, please choose a different name` });
+      }
+        
+      // set the system as public
+      system.isPublic = true;
+      await system.save();
+      sendWhatsappMessage(phoneNumber, `System "${systemName}" is now public`);
+      res.status(200).send({ message: `System "${systemName}" is now public` });
+    } else if (req.body.systemId) {
+      const system = await System.findById(req.body.systemId);
+      if (!system) {
+        sendWhatsappMessage(phoneNumber, `System "${systemName}" does not exist or you do not own it`);
+        return res.status(204).send({ message: `System "${systemName}" does not exist or not owned by the user` });
+      }
+      // check that the system name is unique on a global level
+      const publicSystem = await System.findOne({ name: system.name, isPublic: true });
+      if (publicSystem) {
+        sendWhatsappMessage(phoneNumber, `System "${system.name}" is not unique, please choose a different name`);
+        return res.status(204).send({ message: `System "${system.name}" is not unique, please choose a different name` });
+      }
+      // set the system as public
+      system.isPublic = true;
+      await system.save();
+      res.status(200).send({ message: `System "${system.name}" is now public`, system });
+    } else {
+      next();
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Sets a system as private, either receives messageBody parameter from the request body formatted as 'set private <system-name>' or receives systemId parameter from the request body
+ * Checks that the user is the system owner
+*/
+
+const setSystemPrivate = async (req, res, next) => {
+  // receives messageBody parameter from the request body formatted as 'set private <system-name>'
+  // or receives systemId parameter from the request body
+  try {
+    const { phoneNumber, messageBody } = req.body;
+    const user = await User.findOne({ phoneNumber });
+    if (messageBody?.startsWith('set private')) {
+      const systemName = messageBody.split(' ')[2]?.toLowerCase();
+      if (!systemName) {
+        sendWhatsappMessage(phoneNumber, `Please follow the format: set private <system-name>`);
+        return res.status(204).send({ message: 'Please follow the format: set private <system-name>' });
+      }
+      // check that the user owns the system by searching the users' systems array for the system name and checking that the systemOwner is the user
+      const system = await System.findOne({ name: systemName, owner: user._id });
+      if (!system) {
+        sendWhatsappMessage(phoneNumber, `System "${systemName}" does not exist or you do not own it`);
+        return res.status(204).send({ message: `System "${systemName}" does not exist or not owned by the user` });
+      }
+      // set the system as private
+      system.isPublic = false;
+      await system.save();
+      sendWhatsappMessage(phoneNumber, `System "${systemName}" is now private`);
+      res.status(200).send({ message: `System "${systemName}" is now private` });
+    } else if (req.body.systemId) {
+      const system = await System.findById(req.body.systemId);
+      if (!system) {
+        sendWhatsappMessage(phoneNumber, `System "${systemName}" does not exist or you do not own it`);
+        return res.status(204).send({ message: `System "${systemName}" does not exist or not owned by the user` });
+      }
+      // set the system as private
+      system.isPublic = false;
+      await system.save();
+      res.status(200).send({ message: `System "${system.name}" is now private`, system });
+    } else {
+      next();
+    }
+  } catch (error) {
+    next(error);
+  }
+};
 
 module.exports = {
   addUserToSystem,
   removeUserFromSystem,
   getSystemUsers,
   renameSystem,
+  setSystemPublic,
+  setSystemPrivate,
 };

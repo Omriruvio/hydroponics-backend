@@ -27,6 +27,9 @@ module.exports.DEFAULT_HELP_MESSAGE =
   `*'create system <system-name>'* - Create a new system\n` +
   `*'system <system-name> <data>'* - Submit crop data for a specific system\n` +
   `*'default system <system-name>'* - Set a default system for crop data submission\n` +
+  `*'rename <system-name> <new-system-name>'* - Rename a system\n` +
+  `*'set public <system-name>'* - Set a system to be public\n` +
+  `*'set private <system-name>'* - Set a system to be private\n` +
   `*'my systems'* - List all your systems\n` +
   `*'profile'* - View your profile information\n`;
 
