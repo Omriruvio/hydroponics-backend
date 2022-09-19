@@ -18,6 +18,20 @@ const systemSchema = new mongoose.Schema({
   ownerPhoneNumber: {
     type: String,
   },
+  isPublic: {
+    type: Boolean,
+    default: false,
+    // on change to true, check that the name is unique across all systems
+    validate: {
+      validator: async function (isPublic) {
+        if (isPublic) {
+          const system = await this.constructor.findOne({ name: this.name });
+          if (system) throw new Error('System name is not unique');
+        }
+      },
+      message: 'System name is not unique',
+    },
+  },
   dateCreated: {
     type: Date,
     default: Date.now(),
@@ -154,6 +168,48 @@ systemSchema.statics.deleteMessage = async function (systemId, messageId) {
   if (!system) throw new Error('System not found');
   system.messageHistory = system.messageHistory.filter((message) => message.toString() !== messageId);
   return system.save();
+};
+
+/**
+ * Renames a system.
+ * System name must be unique in the user's list of systems. If it is not unique a number will be appended similarly to createSystem.
+ * If the system is public, the name must be unique across all systems, otherwise a new name will be created by appending a number similarly to createSystem, but on a global level.
+ */
+
+systemSchema.statics.renameSystem = async function (systemId, newName) {
+  const system = await this.findById(systemId);
+  if (!system) throw new Error('System not found');
+
+  // check if the system is public, if it is check if the name is unique across all systems, otherwise, append a number to the name until it is unique on a global level
+  if (system.public) {
+    let systemName = newName;
+    const arrayOfSystemNames = await this.find({}, { name: 1 });
+    let systemNameExists = arrayOfSystemNames.some((system) => system.name === systemName);
+
+    let i = 1;
+    while (systemNameExists) {
+      systemName = `${newName}_${i}`;
+      systemNameExists = arrayOfSystemNames.some((system) => system.name === systemName);
+      i++;
+    }
+    system.name = systemName;
+    return system.save();
+  } else {
+    // check if the user already has a system with the same name, if so, append _<number> to the name until it is unique
+    let systemName = newName;
+    const arrayOfSystemNames = await this.find({ owner: system.owner }, { name: 1 });
+    let systemNameExists = arrayOfSystemNames.some((system) => system.name === systemName);
+
+    let i = 1;
+    while (systemNameExists) {
+      systemName = `${newName}_${i}`;
+      systemNameExists = arrayOfSystemNames.find((system) => system.name === systemName);
+      i++;
+    }
+
+    system.name = systemName;
+    return system.save();
+  }
 };
 
 module.exports = mongoose.model('system', systemSchema);

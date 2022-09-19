@@ -7,13 +7,19 @@
 const System = require('../models/system');
 const User = require('../models/user');
 const { sendWhatsappMessage } = require('../utils/send-twilio-message');
+const { MAX_SYSTEM_NAME_LENGTH } = require('../config');
 
 const createNewSystem = async (req, res, next) => {
   try {
     if (req.body.messageBody.startsWith('create system')) {
       const { messageBody } = req.body;
       const { phoneNumber } = req.body;
-      const systemName = messageBody.split(' ')[2].toLowerCase();
+      const systemName = messageBody.split(' ')[2]?.toLowerCase();
+
+      if (systemName.length > MAX_SYSTEM_NAME_LENGTH) {
+        sendWhatsappMessage(phoneNumber, `System name should be less than 20 characters`);
+        return res.status(204).send({ message: 'System name should be less than 20 characters' });
+      }
 
       if (!systemName) {
         sendWhatsappMessage(phoneNumber, `Please follow the format: create system <system-name>`);

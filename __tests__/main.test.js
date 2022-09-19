@@ -6,6 +6,7 @@ const { DEFAULT_HELP_MESSAGE } = require('../config.js');
 const { addSupervisor } = require('../utils/add-supervisor.js');
 const User = require('../models/user');
 const Message = require('../models/message');
+const System = require('../models/system');
 const request = supertest(app);
 
 const mockUser = {
@@ -67,6 +68,8 @@ let systemsCollection;
 let testSystemCollectionId;
 let mockUserId;
 let messageCollection;
+let mockSystemId;
+let mockSystem;
 
 beforeAll(async () => {
   connection = await MongoClient.connect(process.env.MONGODB_URI, {
@@ -90,7 +93,8 @@ afterAll(async () => {
   await mainCollection.findOneAndDelete({ phoneNumber: mobileMockUser.phoneNumber });
   await superCollection.findOneAndDelete({ phoneNumber: `whatsapp:+972${+mockSupervisor.phoneNumber}` });
   await systemsCollection.findOneAndDelete({ users: { $in: [testSystemCollectionId] } });
-  await systemsCollection.deleteMany({ ownerName: 'mock-user' });
+  await systemsCollection.deleteMany({ ownerName: mockUser.username, ownerPhoneNumber: mockUser.phoneNumber });
+  await messageCollection.deleteMany({ senderName: mockUser.username, senderPhoneNumber: mockUser.phoneNumber });
 
   await connection.close();
 });
@@ -245,5 +249,42 @@ describe('Testing endpoints', () => {
     const allSystems = await db.collection('systems').find({}).toArray();
     const lastSystem = allSystems[allSystems.length - 1];
     expect(lastSystem.users.some((user) => user === mockUser._id)).toBeFalsy();
+  });
+
+  // test cropdata route requesting 'create system <system-name>'
+  it('Should create a new system for mock user (mobile message)', async () => {
+    const response = await request.post('/cropdata').send({ phoneNumber: mockUser.phoneNumber, messageBody: 'create system test-system' });
+    expect(response.body.systemId).toBeTruthy();
+    mockSystemId = response.body.systemId;
+    mockSystem = await System.findById(mockSystemId);
+    expect(mockSystem).toBeTruthy();
+  });
+
+  // test cropdata route requesting 'system <system-name> <crop-data>'
+  it('Should add crop data to a system', async () => {
+    const response = await request.post('/cropdata').send({ phoneNumber: mockUser.phoneNumber, messageBody: 'system test-system t50p6.6' });
+    expect(response.body.status).toBe('ok');
+    // check that mockSystem has in its last message in the messageHistory array the messageBody 't50p6.6'
+    mockSystem = await System.findById(mockSystemId).populate('messageHistory');
+    expect(mockSystem.messageHistory.at(-1).messageBody).toBe('t50p6.6');
+  });
+
+  // test cropdata route requesting 'default system <system-name>'
+  it('Should set a system as default for a user', async () => {
+    // create a new system system2 for the mock user then test setting it as default
+    const response = await request.post('/cropdata').send({ phoneNumber: mockUser.phoneNumber, messageBody: 'create system test-system2' });
+    expect(response.body.systemId).toBeTruthy();
+    const mockSystem2Id = response.body.systemId;
+    const response2 = await request.post('/cropdata').send({ phoneNumber: mockUser.phoneNumber, messageBody: 'default system test-system2' });
+    expect(response2.status).toBe(200);
+    // check that the mock user's default system is the system2
+    const user = await User.findOne({ phoneNumber: mockUser.phoneNumber });
+    expect(user.defaultSystem.toString()).toBe(mockSystem2Id);
+  });
+
+  // test cropdata route requesting 'my systems'
+  it('Should get all existing systems of a user', async () => {
+    const response = await request.post('/cropdata').send({ phoneNumber: mockUser.phoneNumber, messageBody: 'my systems' });
+    expect(response.body.systemNames).toBe('default, test-system, test-system2');
   });
 });

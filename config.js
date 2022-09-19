@@ -27,7 +27,10 @@ module.exports.DEFAULT_HELP_MESSAGE =
   `*'create system <system-name>'* - Create a new system\n` +
   `*'system <system-name> <data>'* - Submit crop data for a specific system\n` +
   `*'default system <system-name>'* - Set a default system for crop data submission\n` +
-  `*'my systems'* - List all your systems`;
+  `*'my systems'* - List all your systems\n` +
+  `*'profile'* - View your profile information\n`;
+
+module.exports.MAX_SYSTEM_NAME_LENGTH = 20;
 
 module.exports.PROBABILITY = {
   VERY_LOW: 0.25,

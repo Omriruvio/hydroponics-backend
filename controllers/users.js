@@ -10,6 +10,7 @@ const client = require('twilio')(TWILIO_SID, TWILIO_AUTH_TOKEN);
 const jwt = require('jsonwebtoken');
 const System = require('../models/system');
 const { sendWhatsappMessage } = require('../utils/send-twilio-message');
+const createProfileMessage = require('../utils/create-profile-message');
 
 const handleSignup = (req, res, next) => {
   // todo - make frontend force submitting username
@@ -182,68 +183,100 @@ const handleDeleteLast = async (req, res, next) => {
 };
 
 const handleHelpRequest = (req, res, next) => {
-  const { phoneNumber } = req.body;
-  const responseMessage = DEFAULT_HELP_MESSAGE;
-  if (NODE_ENV === 'test') {
-    res.send({ status: 'ok', message: DEFAULT_HELP_MESSAGE });
-    return;
+  try {
+    const { phoneNumber } = req.body;
+    const responseMessage = DEFAULT_HELP_MESSAGE;
+    if (NODE_ENV === 'test') {
+      res.send({ status: 'ok', message: DEFAULT_HELP_MESSAGE });
+      return;
+    }
+    client.messages
+      .create({ from: HYDROPONICS_WA_NUMBER, to: phoneNumber, body: responseMessage })
+      .then((message) => {
+        res.setHeader('Content-type', 'text/csv');
+        res.status(200).send(JSON.stringify({ message: responseMessage }));
+      })
+      .catch(next);
+  } catch (err) {
+    next(err);
   }
-  client.messages
-    .create({ from: HYDROPONICS_WA_NUMBER, to: phoneNumber, body: responseMessage })
-    .then((message) => {
-      res.setHeader('Content-type', 'text/csv');
-      res.status(200).send(JSON.stringify({ message: responseMessage }));
-    })
-    .catch(next);
 };
 
 const handleHistoryRequest = (req, res, next) => {
-  //expects phoneNumber in the format of 'whatsapp:+972xxxxxxxxx'
-  const phoneNumber = req.params.phone;
-  const dayCount = req.params.days;
-  const systemId = req.params.systemId === 'undefined' ? undefined : req.params.systemId;
-  const isWhatsappNumber = phoneNumber.startsWith('whatsapp:');
-  const whatsappConvertedNumber = isWhatsappNumber ? phoneNumber : `whatsapp:+972${String(+phoneNumber)}`;
-  const toDate = new Date();
-  // receives whatsapp number, to date, number of days to go back, and optional systemId (otherwise defaults to default system)
-  User.getMessageHistoryFrom(whatsappConvertedNumber, toDate, dayCount, systemId)
-    .then((history) => {
-      if (history.length === 0) res.status(204).send();
-      else res.send(history);
-    })
-    .catch(next);
+  try {
+    //expects phoneNumber in the format of 'whatsapp:+972xxxxxxxxx'
+    const phoneNumber = req.params.phone;
+    const dayCount = req.params.days;
+    const systemId = req.params.systemId === 'undefined' ? undefined : req.params.systemId;
+    const isWhatsappNumber = phoneNumber.startsWith('whatsapp:');
+    const whatsappConvertedNumber = isWhatsappNumber ? phoneNumber : `whatsapp:+972${String(+phoneNumber)}`;
+    const toDate = new Date();
+    // receives whatsapp number, to date, number of days to go back, and optional systemId (otherwise defaults to default system)
+    User.getMessageHistoryFrom(whatsappConvertedNumber, toDate, dayCount, systemId)
+      .then((history) => {
+        if (history.length === 0) res.status(204).send();
+        else res.send(history);
+      })
+      .catch(next);
+  } catch (err) {
+    next(err);
+  }
 };
 
 const handleNewSystem = async (req, res, next) => {
-  const phoneNumber = req.body.phoneNumber || req.whatsappPhoneNumber;
-  const systemName = req.body.systemName?.toLowerCase() || req.systemName?.toLowerCase();
-  const user = await User.findOne({ phoneNumber });
-  if (!user) {
-    res.status(204).send();
-    return;
+  try {
+    const phoneNumber = req.body.phoneNumber || req.whatsappPhoneNumber;
+    const systemName = req.body.systemName?.toLowerCase() || req.systemName?.toLowerCase();
+    const user = await User.findOne({ phoneNumber });
+    if (!user) {
+      res.status(204).send();
+      return;
+    }
+    const system = await System.createSystem(user._id, systemName);
+    await User.addSystem(user._id, system._id);
+    if (req.isMobileRequest) sendWhatsappMessage(phoneNumber, `System ${system.name} created.`);
+    res.status(200).send({ systemId: system._id });
+  } catch (err) {
+    next(err);
   }
-  const system = await System.createSystem(user._id, systemName);
-  await User.addSystem(user._id, system._id);
-  if (req.isMobileRequest) sendWhatsappMessage(phoneNumber, `System ${system.name} created.`);
-  res.status(200).send({ systemId: system._id });
 };
 
 const setDefaultSystem = async (req, res, next) => {
-  // expects phoneNumber and systemId in the body
-  const phoneNumber = req.body.phoneNumber || req.whatsappPhoneNumber;
-  const systemId = req.body.systemId || req.systemId;
-  await User.setDefaultSystem(phoneNumber, systemId);
-  if (req.isMobileRequest) sendWhatsappMessage(phoneNumber, 'Default system set.');
-  res.status(200).send({ message: 'Default system set.' });
+  try {
+    // expects phoneNumber and systemId in the body
+    const phoneNumber = req.body.phoneNumber || req.whatsappPhoneNumber;
+    const systemId = req.body.systemId || req.systemId;
+    await User.setDefaultSystem(phoneNumber, systemId);
+    if (req.isMobileRequest) sendWhatsappMessage(phoneNumber, 'Default system set.');
+    res.status(200).send({ message: 'Default system set.' });
+  } catch (err) {
+    next(err);
+  }
 };
 
 const getAllUserSystems = async (req, res, next) => {
-  // expects phoneNumber in the body
-  const phoneNumber = req.body.phoneNumber || req.whatsappPhoneNumber;
-  const user = await User.findOne({ phoneNumber });
-  if (!user) return res.status(204).send({ message: 'User not found' });
-  const systems = await System.find({ _id: { $in: user.systems } });
-  res.status(200).send({ systems });
+  try {
+    // expects phoneNumber in the body
+    const phoneNumber = req.body.phoneNumber || req.whatsappPhoneNumber;
+    const user = await User.findOne({ phoneNumber });
+    if (!user) return res.status(204).send({ message: 'User not found' });
+    const systems = await System.find({ _id: { $in: user.systems } });
+    res.status(200).send({ systems });
+  } catch (err) {
+    next(err);
+  }
+};
+
+const handleProfileRequest = async (req, res, next) => {
+  try {
+    const { phoneNumber } = req.query;
+    const user = await User.findOne({ phoneNumber }).populate('systems messageHistory defaultSystem');
+    if (!user) return res.status(204).send({ message: 'User not found' });
+    sendWhatsappMessage(phoneNumber, createProfileMessage(user));
+    res.status(200).send({ user });
+  } catch (err) {
+    next(err);
+  }
 };
 
 // Whatsapp interface:
@@ -264,4 +297,5 @@ module.exports = {
   handleNewSystem,
   setDefaultSystem,
   getAllUserSystems,
+  handleProfileRequest,
 };

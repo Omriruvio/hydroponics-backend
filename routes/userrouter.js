@@ -10,6 +10,7 @@ const {
   handleGetUser,
   handleNewSystem,
   setDefaultSystem,
+  handleProfileRequest,
 } = require('../controllers/users');
 const auth = require('../middlewares/auth');
 const handleIfImage = require('../middlewares/check-for-image');
@@ -46,6 +47,7 @@ router.post(
 router.post('/delete-last', verifyTwilioRequest, handleDeleteLast);
 router.post('/mobilesignup', verifyTwilioRequest, handleMobileSignup);
 router.post('/help', verifyTwilioRequest, handleHelpRequest);
+router.get('/mobile-profile', verifyTwilioRequest, handleProfileRequest);
 
 // requests that can come from either web application or twilio studio
 
