@@ -24,7 +24,7 @@ const systemSchema = new mongoose.Schema({
     // on change to true, check that the name is unique across all public systems
     validate: {
       validator: async function (isPublic) {
-        if (isPublic) {
+        if (isPublic && this.isModified('isPublic')) {
           const system = await this.constructor.findOne({ name: this.name, isPublic: true });
           if (system) throw new Error(`System name ${this.name} is already taken`);
         }

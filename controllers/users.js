@@ -11,6 +11,8 @@ const jwt = require('jsonwebtoken');
 const System = require('../models/system');
 const { sendWhatsappMessage } = require('../utils/send-twilio-message');
 const createProfileMessage = require('../utils/create-profile-message');
+const getWhatsappNumber = require('../utils/get-whatsapp-number');
+const getInviteMessage = require('../utils/get-invite-message');
 
 const handleSignup = (req, res, next) => {
   // todo - make frontend force submitting username
@@ -279,10 +281,55 @@ const handleProfileRequest = async (req, res, next) => {
   }
 };
 
-// Whatsapp interface:
-// - user sends 'system <name> <cropdata>'
-// - user sends 'default system <system-name>'
-// - user receives link to add a system to his list of systems
+/**
+ * Adds a user to the list of users on a system
+ * receives messageBody in the format of 'invite <user-phone-number> <system-name>'
+ * Sends a whatsapp message to the invited user
+ * System must be public, if not, sends an error whatsapp message and response requesting to make the system public
+ * If the user is already a part of the systems' users, sends an error whatsapp message and response
+ * Utilizes a function that converts phone numbers to be invited from '0501234567' to 'whatsapp:+972501234567' taking into account the country code which will be figured out by the twilio api
+ */
+
+const handleInviteToCollaborate = async (req, res, next) => {
+  try {
+    const { phoneNumber, messageBody } = req.body;
+    const [invite, invitedPhoneNumber, systemName] = messageBody.toLowerCase().split(' ');
+    const user = await User.findOne({ phoneNumber });
+    const system = await System.findOne({ name: systemName, owner: user._id });
+    const invitedUser = await User.findOne({ phoneNumber: getWhatsappNumber(invitedPhoneNumber) });
+    if (!system) {
+      sendWhatsappMessage(
+        phoneNumber,
+        `System ${systemName} not found.\nPlease make sure your message is formatted\n'invite <user-phone-number> <system-name>'`
+      );
+      return res.status(200).send({ message: `System ${systemName} not found.` });
+    }
+    if (!system.isPublic) {
+      sendWhatsappMessage(phoneNumber, `System ${systemName} is not public.\nYou may make it public by typing 'set public ${systemName}'`);
+      return res.status(200).send({ message: `System ${systemName} is not public.` });
+    }
+    if (!invitedUser) {
+      sendWhatsappMessage(
+        phoneNumber,
+        `User ${invitedPhoneNumber} is not subscribed to Hydroponics services.\nPlease make sure your message is formatted 'invite <user-phone-number> <system-name>'`
+      );
+      return res.status(200).send({ message: `User ${invitedPhoneNumber} is not subscribed to Hydroponics services.` });
+    }
+    if (system.users.includes(invitedUser._id)) {
+      sendWhatsappMessage(phoneNumber, `User ${invitedPhoneNumber} is already a part of system ${systemName}.`);
+      return res.status(200).send({ message: `User ${invitedPhoneNumber} is already a part of system ${systemName}.` });
+    }
+    const whatsappConvertedNumber = `whatsapp:+972${String(+invitedPhoneNumber)}`;
+    sendWhatsappMessage(whatsappConvertedNumber, getInviteMessage(user.username, systemName));
+    await System.addUser(system._id, invitedUser._id);
+    invitedUser.systems.push(system._id);
+    await invitedUser.save();
+    sendWhatsappMessage(phoneNumber, `User ${invitedPhoneNumber} invited to system ${systemName}.`);
+    res.status(200).send({ message: `User ${invitedPhoneNumber} invited to system ${systemName}.` });
+  } catch (err) {
+    next(err);
+  }
+};
 
 module.exports = {
   handleHistoryRequest,
@@ -298,4 +345,5 @@ module.exports = {
   setDefaultSystem,
   getAllUserSystems,
   handleProfileRequest,
+  handleInviteToCollaborate,
 };
