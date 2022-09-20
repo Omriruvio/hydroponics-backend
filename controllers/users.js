@@ -330,6 +330,48 @@ const handleInviteToCollaborate = async (req, res, next) => {
   }
 };
 
+/**
+ * It gets the user's systems and sends them to the user via whatsapp or returns them to the client
+ * @param req - the request object
+ * @param res - the response object
+ * @param next - a function that you call to pass control to the next middleware function.
+ */
+
+const getUserSystems = async (req, res, next) => {
+  const isMobileRequest = Boolean(req.query.messageBody);
+  const phoneNumber = req.body.phoneNumber || req.query.phoneNumber;
+  try {
+    if (req.query.messageBody.startsWith('my systems')) {
+      const user = await User.findOne({ phoneNumber }).populate('systems defaultSystem');
+      const userSystems = System.find({ _id: { $in: user.systems } });
+      const userDefaultSystemName = user.defaultSystem?.name;
+
+      if (user.systems.length) {
+        const systemNames = user.systems.map((system) => system.name).join(', ');
+        if (isMobileRequest) {
+          sendWhatsappMessage(phoneNumber, `*Your system names:*\n${systemNames}\n\n*Default system:*\n${userDefaultSystemName}`);
+          res.status(200).send({ message: 'User systems sent successfully', systemNames, defaultSystem: user.defaultSystem });
+        } else {
+          // not a mobile request
+          res.status(200).send({ systems: userSystems, systemNames, defaultSystem: user.defaultSystem });
+        }
+      } else {
+        if (isMobileRequest) {
+          sendWhatsappMessage(phoneNumber, `You don't have any systems`);
+          res.status(204).send({ message: 'User has no systems' });
+        } else {
+          // not a mobile request
+          res.status(404).send({ message: 'User has no systems' });
+        }
+      }
+    } else {
+      next();
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   handleHistoryRequest,
   handleTwilioAuth,
@@ -345,4 +387,5 @@ module.exports = {
   getAllUserSystems,
   handleProfileRequest,
   handleInviteToCollaborate,
+  getUserSystems,
 };

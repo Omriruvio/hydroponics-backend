@@ -12,6 +12,7 @@ const {
   setDefaultSystem,
   handleProfileRequest,
   handleInviteToCollaborate,
+  getUserSystems,
 } = require('../controllers/users');
 const auth = require('../middlewares/auth');
 const handleIfImage = require('../middlewares/check-for-image');
@@ -22,7 +23,7 @@ const { verifyTwilioRequest } = require('../middlewares/validate-twilio-request'
 const { getPlantHealth } = require('../utils/get-plant-health');
 const isMobileRequest = require('../middlewares/is-mobile-request');
 const createNewSystem = require('../middlewares/create-new-system');
-const getUserSystems = require('../middlewares/get-user-systems');
+// const getUserSystems = require('../middlewares/get-user-systems');
 
 // incoming web application requests
 router.post('/register', handleSignup);
@@ -34,6 +35,7 @@ router.post('/new-system', handleNewSystem);
 
 // incoming requests from twilio studio
 router.post('/identify', verifyTwilioRequest, handleTwilioAuth);
+// prettier-ignore
 router.post(
   '/cropdata',
   verifyTwilioRequest,
@@ -42,7 +44,6 @@ router.post(
   createNewSystem,
   selectDefaultSystem,
   setSelectedSystem,
-  getUserSystems,
   handleCropData
 );
 router.post('/delete-last', verifyTwilioRequest, handleDeleteLast);
@@ -50,6 +51,7 @@ router.post('/mobilesignup', verifyTwilioRequest, handleMobileSignup);
 router.post('/help', verifyTwilioRequest, handleHelpRequest);
 router.get('/mobile-profile', verifyTwilioRequest, handleProfileRequest);
 router.post('/invite-to-collaborate', verifyTwilioRequest, handleInviteToCollaborate);
+router.get('/mobile-get-user-systems', verifyTwilioRequest, getUserSystems);
 
 // requests that can come from either web application or twilio studio
 
