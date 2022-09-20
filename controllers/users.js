@@ -105,15 +105,12 @@ const handleCropData = async (req, res, next) => {
     const selectedSystemId = req.selectedSystem;
     const { phoneNumber, messageBody, imageUrl, plantHealth /* , systemName */ } = req.body;
     const { temperature, humidity, ph, ec } = parseCropData(messageBody);
-    const { responseMessage: imageResponseMessage, healthState } = getImageResponseMessage(plantHealth);
     const user = await User.findOne({ phoneNumber });
     if (!user) {
       res.status(204).send();
       return;
     }
-    const messageData = { temperature, humidity, ph, ec, imageUrl, healthState, messageBody, user: user._id };
 
-    // const systemId = systemName ? user.systems.find((system) => system.name === systemName)._id : user.defaultSystem ? user.defaultSystem._id : (await System.createSystem(user._id)._id);
     let systemId;
     if (selectedSystemId) systemId = selectedSystemId;
     if (!systemId && user.defaultSystem) systemId = String(user.defaultSystem);
@@ -124,7 +121,9 @@ const handleCropData = async (req, res, next) => {
       await User.findByIdAndUpdate(user._id, { defaultSystem: systemId });
     }
     const systemName = await System.findById(systemId).then((system) => system.name);
+    const { responseMessage: imageResponseMessage, healthState } = getImageResponseMessage(plantHealth, systemName);
     const responseMessage = imageUrl ? imageResponseMessage : getResponseMessage({ temperature, humidity, ph, ec }, systemName);
+    const messageData = { temperature, humidity, ph, ec, imageUrl, healthState, messageBody, user: user._id };
 
     // create message in the message collection
     const message = await Message.addMessage(messageData, systemId);

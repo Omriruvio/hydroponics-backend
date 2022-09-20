@@ -76,8 +76,8 @@ const renameSystem = async (req, res, next) => {
       const oldSystem = await System.findOne({ name: oldSystemName, owner: user._id });
 
       if (!oldSystem) {
-        sendWhatsappMessage(phoneNumber, `System "${oldSystemName}" does not exist`);
-        return res.status(204).send({ message: `System "${oldSystemName}" does not exist` });
+        sendWhatsappMessage(phoneNumber, `System "${oldSystemName}" does not exist, or you do not own it`);
+        return res.status(204).send({ message: `System "${oldSystemName}" does not exist, or not owned by the user` });
       }
 
       const renamedSystem = await System.renameSystem(oldSystem._id, newSystemName);

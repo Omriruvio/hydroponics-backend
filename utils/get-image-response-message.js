@@ -9,6 +9,7 @@ const LIKELIHOOD = {
 /**
  * Receives array of label/probablity objects, returns a structured message.
  * @param {[{ label: 'healthy', prob: number },{ label: 'deficiencies', prob: number },{ label: 'aphids_and_mealybugs', prob: number }]} plantHealth
+ * @param {string} systemName
  * @returns {{
  * responseMessage: string,
  * healthState: {
@@ -18,8 +19,10 @@ const LIKELIHOOD = {
  * }}} Object containing message and health state for the various categories
  */
 
-const getImageResponseMessage = (plantHealth) => {
-  let responseMessage = 'Image has been stored.';
+const getImageResponseMessage = (plantHealth, systemName) => {
+  let responseMessage = '';
+  if (systemName) responseMessage = `*Image has been stored for system - "${systemName}".*`;
+  else responseMessage = '*Image has been stored.*';
   if (plantHealth?.length === 0 || !plantHealth) return responseMessage;
   responseMessage += '\n\n*Crop assessment:*\n';
   const prefix = 'Your crop ';

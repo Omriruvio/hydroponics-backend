@@ -47,6 +47,15 @@ const userSchema = new mongoose.Schema({
   systems: {
     type: [mongoose.Types.ObjectId],
     ref: 'system',
+    validate: {
+      // if the user has no default system, and a system was added to the systems array, if a system is added, set it as the default system
+      validator: async function (systems) {
+        if (!this.defaultSystem && systems.length > 0 && this.isModified('systems')) {
+          this.defaultSystem = systems[0];
+        }
+        return true;
+      },
+    },
   },
   messageHistory: [{ type: mongoose.Types.ObjectId, ref: 'message' }],
 });

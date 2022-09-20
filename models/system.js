@@ -50,6 +50,19 @@ const systemSchema = new mongoose.Schema({
   },
 });
 
+// when a new system is created console.log a message with it's name, id, and ownerName
+systemSchema.post('save', function (doc, next) {
+  // check that the saved system is in fact a new system by searching the id in the database
+  this.constructor.findById(doc._id).then((system) => {
+    if (!system) {
+      console.log(`New system created: ${doc.name}\nSystem id: ${doc._id}\nSystem owner: ${doc.ownerName} ${doc.ownerPhoneNumber}`);
+    } else {
+      console.log(`System updated: ${doc.name}\nSystem id: ${doc._id}\nSystem owner: ${doc.ownerName} ${doc.ownerPhoneNumber}`);
+    }
+  next();
+  });
+});
+
 /**
  * Creates a new system. If no name is provided, the system will be given a unique name-id.
  * also adds the system to the user's list of systems

@@ -6,7 +6,11 @@
 
 const createProfileMessage = (user) => {
   let message = `Hello ${user.username}!\n\n`;
-  message += `Your default system name is "${user.defaultSystem.name}". \n`;
+  if (!user.defaultSystem) {
+    message += `You have not set a default system. \n`;
+  } else {
+    message += `Your default system name is "${user.defaultSystem.name}". \n`;
+  }
   // you have X private systems which are named: system1, system2, system3 (or 'you have no private systems') private systems are found by checking isPublic property
   const privateSystems = user.systems.filter((system) => !system.isPublic);
   if (privateSystems.length === 0) message += 'You have no private systems. \n';
