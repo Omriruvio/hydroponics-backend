@@ -5,3 +5,4 @@ keys
 logs
 *.log
 coverage
+db-backups

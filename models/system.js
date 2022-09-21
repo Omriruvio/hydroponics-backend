@@ -43,6 +43,15 @@ const systemSchema = new mongoose.Schema({
   messageHistory: {
     type: [mongoose.Types.ObjectId],
     ref: 'message',
+    // on insert, update dateModified
+    validate: {
+      validator: function (messageHistory) {
+        if (messageHistory.length > 0 && this.isModified('messageHistory')) {
+          this.dateModified = Date.now();
+        }
+        return true;
+      },
+    },
   },
   users: {
     type: [mongoose.Types.ObjectId],
