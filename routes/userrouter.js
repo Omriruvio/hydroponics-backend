@@ -13,6 +13,7 @@ const {
   handleProfileRequest,
   handleInviteToCollaborate,
   getUserSystems,
+  getDefaultSystem,
 } = require('../controllers/users');
 const auth = require('../middlewares/auth');
 const handleIfImage = require('../middlewares/check-for-image');
@@ -31,6 +32,8 @@ router.post('/login', handleLogin);
 router.get('/history/:phone/:days/:systemId', handleHistoryRequest);
 router.get('/me', auth, handleGetUser);
 router.post('/new-system', handleNewSystem);
+router.get('/get-user-systems', getUserSystems);
+router.get('/get-default-system', getDefaultSystem);
 // get all user systems
 
 // incoming requests from twilio studio

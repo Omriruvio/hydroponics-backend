@@ -339,36 +339,63 @@ const handleInviteToCollaborate = async (req, res, next) => {
 
 const getUserSystems = async (req, res, next) => {
   const isMobileRequest = Boolean(req.query.messageBody);
-  const phoneNumber = req.body.phoneNumber || req.query.phoneNumber;
+  let phoneNumber = req.body.phoneNumber || req.query.phoneNumber;
+  if (!phoneNumber.startsWith('whatsapp')) phoneNumber = getWhatsappNumber(phoneNumber);
   try {
-    if (req.query.messageBody.startsWith('my systems')) {
-      const user = await User.findOne({ phoneNumber }).populate('systems defaultSystem');
-      const userSystems = System.find({ _id: { $in: user.systems } });
-      const userDefaultSystemName = user.defaultSystem?.name;
-
-      if (user.systems.length) {
-        const systemNames = user.systems.map((system) => system.name).join(', ');
-        if (isMobileRequest) {
-          sendWhatsappMessage(phoneNumber, `*Your system names:*\n${systemNames}\n\n*Default system:*\n${userDefaultSystemName}`);
-          res.status(200).send({ message: 'User systems sent successfully', systemNames, defaultSystem: user.defaultSystem });
-        } else {
-          // not a mobile request
-          res.status(200).send({ systems: userSystems, systemNames, defaultSystem: user.defaultSystem });
-        }
+    const user = await User.findOne({ phoneNumber }).populate('systems defaultSystem');
+    if (!user) {
+      if (isMobileRequest) {
+        sendWhatsappMessage(phoneNumber, `User with number ${phoneNumber} not found.`);
+        return res.status(200).send({ message: `User with number ${phoneNumber} not found.` });
       } else {
-        if (isMobileRequest) {
-          sendWhatsappMessage(phoneNumber, `You don't have any systems`);
-          res.status(204).send({ message: 'User has no systems' });
-        } else {
-          // not a mobile request
-          res.status(404).send({ message: 'User has no systems' });
-        }
+        return res.status(404).send({ message: `User with number ${phoneNumber} not found.` });
+      }
+    }
+
+    const userSystems = user.systems.map((system) => {
+      return { ...system.toObject() };
+    });
+
+    const userDefaultSystemName = user.defaultSystem?.name;
+
+    if (user.systems.length) {
+      const systemNames = user.systems.map((system) => system.name).join(', ');
+      if (isMobileRequest) {
+        sendWhatsappMessage(phoneNumber, `*Your system names:*\n${systemNames}\n\n*Default system:*\n${userDefaultSystemName}`);
+        res.status(200).send({ message: 'User systems sent successfully' });
+      } else {
+        // not a mobile request
+        res.status(200).send({ systems: userSystems });
       }
     } else {
-      next();
+      if (isMobileRequest) {
+        sendWhatsappMessage(phoneNumber, `You don't have any systems`);
+        res.status(204).send({ message: 'User has no systems' });
+      } else {
+        // not a mobile request
+        res.status(404).send({ message: 'User has no systems' });
+      }
     }
   } catch (error) {
     next(error);
+  }
+};
+
+/**
+ * Gets a users default system by request query phoneNumber
+ * returns a web response with the default system object
+ */
+
+const getDefaultSystem = async (req, res, next) => {
+  try {
+    const { phoneNumber } = req.query;
+    const user = await User.findOne({ phoneNumber }).populate('defaultSystem');
+    if (!user) return res.status(404).send({ message: 'User not found' });
+    const defaultSystem = user.defaultSystem;
+    if (!defaultSystem) return res.status(404).send({ message: 'User has no default system' });
+    res.status(200).send({ defaultSystem });
+  } catch (err) {
+    next(err);
   }
 };
 
@@ -388,4 +415,5 @@ module.exports = {
   handleProfileRequest,
   handleInviteToCollaborate,
   getUserSystems,
+  getDefaultSystem,
 };

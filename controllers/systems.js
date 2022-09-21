@@ -211,6 +211,24 @@ const setSystemPrivate = async (req, res, next) => {
   }
 };
 
+/**
+ * gets a system by ID from the request query parameter systemId
+ * sends a web response with the system object
+ */
+
+const getSystem = async (req, res, next) => {
+  try {
+    const system = await System.findById(req.query.systemId);
+    if (!system) {
+      return res.status(404).send({ message: 'System does not exist' });      
+    }
+    res.status(200).send({ system });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
 module.exports = {
   addUserToSystem,
   removeUserFromSystem,
@@ -218,4 +236,5 @@ module.exports = {
   renameSystem,
   setSystemPublic,
   setSystemPrivate,
+  getSystem,
 };
