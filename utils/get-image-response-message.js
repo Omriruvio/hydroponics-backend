@@ -28,13 +28,14 @@ const getImageResponseMessage = (plantHealth, systemName) => {
   if (systemName) responseSections.imageStored = `*Image has been stored for system - "${systemName}".*`;
   else responseSections.imageStored = '*Image has been stored.*';
   if (plantHealth?.length === 0 || !plantHealth) return responseSections.imageStored;
+  const YOUR_CROP = 'Your crop ';
   responseSections.assesmentTitle = '\n\n*Crop assessment:*\n';
   responseSections.health = `General health - `;
   responseSections.deficiency = `Deficiencies - `;
   responseSections.pests = `Pest presence - `;
-  responseSections.seemsHealthyOutput = `seems *healthy*. ${EMOJI.GOOD}\n`;
-  responseSections.seemsDeficientOutput = `seems to have *deficiencies*. ${EMOJI.WARNING}\n`;
-  responseSections.seemsInfestedOutput = `seems to have *pest presence*. ${EMOJI.WARNING}\n`;
+  responseSections.seemsHealthyOutput = YOUR_CROP + `seems *healthy*. ${EMOJI.GOOD}\n`;
+  responseSections.seemsDeficientOutput = YOUR_CROP + `seems to have *deficiencies*. ${EMOJI.WARNING}\n`;
+  responseSections.seemsInfestedOutput = YOUR_CROP + `seems to have *pest presence*. ${EMOJI.WARNING}\n`;
   responseSections.noPredictionOutput = 'could not be clearly predicted.\n';
   responseSections.allUncertainOutput = 'All attempted predictions were uncertain.\nPlease provide an alternative or clearer image.';
 
@@ -48,32 +49,23 @@ const getImageResponseMessage = (plantHealth, systemName) => {
   if (deficiency.prob >= 0 && deficiency.prob <= 1) {
     if (deficiency.prob >= PROBABILITY.HIGH) {
       healthState.hasDeficiencies = LIKELIHOOD.POSITIVE;
-      sectionArray.unshift(responseSections.deficiency + responseSections.seemsDeficientOutput);
-    } else {
-      healthState.hasDeficiencies = LIKELIHOOD.UNCERTAIN;
-      sectionArray.push(responseSections.deficiency + responseSections.noPredictionOutput);
+      sectionArray.unshift(responseSections.seemsDeficientOutput);
     }
-  }
+  } else throw new Error('Deficiency probability is not a number between 0 and 1');
 
   if (pests.prob >= 0 && pests.prob <= 1) {
     if (pests.prob >= PROBABILITY.HIGH) {
       healthState.hasPestPresence = LIKELIHOOD.POSITIVE;
-      sectionArray.unshift(responseSections.pests + responseSections.seemsInfestedOutput);
-    } else {
-      healthState.hasPestPresence = LIKELIHOOD.UNCERTAIN;
-      sectionArray.push(responseSections.pests + responseSections.noPredictionOutput);
+      sectionArray.unshift(responseSections.seemsInfestedOutput);
     }
-  }
+  } else throw new Error('Pest probability is not a number between 0 and 1');
 
   if (health.prob >= 0 && health.prob <= 1) {
     if (health.prob >= PROBABILITY.HIGH) {
       healthState.isHealthy = LIKELIHOOD.POSITIVE;
-      sectionArray.unshift(responseSections.health + responseSections.seemsHealthyOutput);
-    } else {
-      healthState.isHealthy = LIKELIHOOD.UNCERTAIN;
-      sectionArray.push(responseSections.health + responseSections.noPredictionOutput);
+      sectionArray.unshift(responseSections.seemsHealthyOutput);
     }
-  }
+  } else throw new Error('Health probability is not a number between 0 and 1');
 
   responseMessage += sectionArray.join('');
 
