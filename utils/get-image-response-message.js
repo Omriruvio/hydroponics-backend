@@ -4,6 +4,7 @@ const LIKELIHOOD = {
   LIKELY_POSITIVE: 'likely-positive',
   LIKELY_NEGATIVE: 'likely-negative',
   NEGATIVE: 'negative',
+  UNCERTAIN: 'uncertain',
 };
 
 /**
@@ -13,90 +14,70 @@ const LIKELIHOOD = {
  * @returns {{
  * responseMessage: string,
  * healthState: {
- *  isHealthy: 'positive'|'likely-positive'|'likely-negative'|'negative',
- *  hasPestPresence: 'positive'|'likely-positive'|'likely-negative'|'negative',
- *  hasDeficiencies: 'positive'|'likely-positive'|'likely-negative'|'negative'
+ *  isHealthy: 'positive'|'likely-positive'|'likely-negative'|'negative'|'uncertain',
+ *  hasPestPresence: 'positive'|'likely-positive'|'likely-negative'|'negative'|'uncertain',
+ *  hasDeficiencies: 'positive'|'likely-positive'|'likely-negative'|'negative'|'uncertain',
  * }}} Object containing message and health state for the various categories
  */
 
 const getImageResponseMessage = (plantHealth, systemName) => {
-  let responseMessage = '';
-  if (systemName) responseMessage = `*Image has been stored for system - "${systemName}".*`;
-  else responseMessage = '*Image has been stored.*';
-  if (plantHealth?.length === 0 || !plantHealth) return responseMessage;
-  responseMessage += '\n\n*Crop assessment:*\n';
-  const prefix = 'Your crop ';
   const [health, deficiency, pests] = plantHealth;
   const healthState = {};
+  const responseSections = {};
 
-  if (health.prob >= 0 && health.prob <= 1) {
-    responseMessage += prefix;
-    switch (true) {
-      case health.prob < PROBABILITY.VERY_LOW:
-        healthState.isHealthy = LIKELIHOOD.NEGATIVE;
-        responseMessage += `seems very unhealthy. ${EMOJI.WARNING}\n`;
-        break;
-      case health.prob < PROBABILITY.LOW:
-        healthState.isHealthy = LIKELIHOOD.LIKELY_NEGATIVE;
-        responseMessage += `seems to have some health issues. ${EMOJI.WARNING}\n`;
-        break;
-      case health.prob < PROBABILITY.HIGH:
-        healthState.isHealthy = LIKELIHOOD.LIKELY_POSITIVE;
-        responseMessage += `seems mostly healthy, but might have some issues. ${EMOJI.NEUTRAL}\n`;
-        break;
+  if (systemName) responseSections.imageStored = `*Image has been stored for system - "${systemName}".*`;
+  else responseSections.imageStored = '*Image has been stored.*';
+  if (plantHealth?.length === 0 || !plantHealth) return responseSections.imageStored;
+  responseSections.assesmentTitle = '\n\n*Crop assessment:*\n';
+  responseSections.health = `General health - `;
+  responseSections.deficiency = `Deficiencies - `;
+  responseSections.pests = `Pest presence - `;
+  responseSections.seemsHealthyOutput = `seems *healthy*. ${EMOJI.GOOD}\n`;
+  responseSections.seemsDeficientOutput = `seems to have *deficiencies*. ${EMOJI.WARNING}\n`;
+  responseSections.seemsInfestedOutput = `seems to have *pest presence*. ${EMOJI.WARNING}\n`;
+  responseSections.noPredictionOutput = 'could not be clearly predicted.\n';
+  responseSections.allUncertainOutput = 'All attempted predictions were uncertain.\nPlease provide an alternative or clearer image.';
 
-      default:
-        healthState.isHealthy = LIKELIHOOD.POSITIVE;
-        responseMessage += `seems very healthy. ${EMOJI.GOOD}\n`;
-        break;
-    }
+  if (health.prob < PROBABILITY.HIGH && deficiency.prob < PROBABILITY.HIGH && pests.prob < PROBABILITY.HIGH) {
+    return { responseMessage: `${responseSections.imageStored}\n\n${responseSections.allUncertainOutput}`, healthState, plantHealth };
   }
 
+  let responseMessage = responseSections.imageStored + responseSections.assesmentTitle;
+  const sectionArray = [];
+
   if (deficiency.prob >= 0 && deficiency.prob <= 1) {
-    responseMessage += prefix;
-    switch (true) {
-      case deficiency.prob < PROBABILITY.VERY_LOW:
-        healthState.hasDeficiencies = LIKELIHOOD.NEGATIVE;
-        responseMessage += `seems to have no deficiencies. ${EMOJI.GOOD}\n`;
-        break;
-      case deficiency.prob < PROBABILITY.LOW:
-        healthState.hasDeficiencies = LIKELIHOOD.LIKELY_NEGATIVE;
-        responseMessage += `seems unlikely to have major deficiencies. ${EMOJI.NEUTRAL}\n`;
-        break;
-      case deficiency.prob < PROBABILITY.HIGH:
-        healthState.hasDeficiencies = LIKELIHOOD.LIKELY_POSITIVE;
-        responseMessage += `seems to have some deficiencies. ${EMOJI.WARNING}\n`;
-        break;
-      default:
-        healthState.hasDeficiencies = LIKELIHOOD.POSITIVE;
-        responseMessage += `seems to have serious deficiencies. ${EMOJI.WARNING}\n`;
-        break;
+    if (deficiency.prob >= PROBABILITY.HIGH) {
+      healthState.hasDeficiencies = LIKELIHOOD.POSITIVE;
+      sectionArray.unshift(responseSections.deficiency + responseSections.seemsDeficientOutput);
+    } else {
+      healthState.hasDeficiencies = LIKELIHOOD.UNCERTAIN;
+      sectionArray.push(responseSections.deficiency + responseSections.noPredictionOutput);
     }
   }
 
   if (pests.prob >= 0 && pests.prob <= 1) {
-    responseMessage += prefix;
-    switch (true) {
-      case pests.prob < PROBABILITY.VERY_LOW:
-        healthState.hasPestPresence = LIKELIHOOD.NEGATIVE;
-        responseMessage += `does not seem to have pests. ${EMOJI.GOOD}\n`;
-        break;
-      case pests.prob < PROBABILITY.LOW:
-        healthState.hasPestPresence = LIKELIHOOD.LIKELY_NEGATIVE;
-        responseMessage += `seems unlikely to have pest presence. ${EMOJI.NEUTRAL}\n`;
-        break;
-      case pests.prob < PROBABILITY.HIGH:
-        healthState.hasPestPresence = LIKELIHOOD.LIKELY_POSITIVE;
-        responseMessage += `seems to have some pests present. ${EMOJI.WARNING}\n`;
-        break;
-      default:
-        healthState.hasPestPresence = LIKELIHOOD.POSITIVE;
-        responseMessage += `seems to suffer from major pest presence. ${EMOJI.WARNING}\n`;
-        break;
+    if (pests.prob >= PROBABILITY.HIGH) {
+      healthState.hasPestPresence = LIKELIHOOD.POSITIVE;
+      sectionArray.unshift(responseSections.pests + responseSections.seemsInfestedOutput);
+    } else {
+      healthState.hasPestPresence = LIKELIHOOD.UNCERTAIN;
+      sectionArray.push(responseSections.pests + responseSections.noPredictionOutput);
     }
   }
 
-  return { responseMessage, healthState };
+  if (health.prob >= 0 && health.prob <= 1) {
+    if (health.prob >= PROBABILITY.HIGH) {
+      healthState.isHealthy = LIKELIHOOD.POSITIVE;
+      sectionArray.unshift(responseSections.health + responseSections.seemsHealthyOutput);
+    } else {
+      healthState.isHealthy = LIKELIHOOD.UNCERTAIN;
+      sectionArray.push(responseSections.health + responseSections.noPredictionOutput);
+    }
+  }
+
+  responseMessage += sectionArray.join('');
+
+  return { responseMessage, healthState, plantHealth };
 };
 
 module.exports = { getImageResponseMessage };

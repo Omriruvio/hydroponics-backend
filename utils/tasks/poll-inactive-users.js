@@ -20,25 +20,27 @@ const task = new AsyncTask(
     }
     // todo: consider increasing push interval by applying 7 days * pushNotificationsSent + 1
     // todo: this will increase the interval of pushing each time
-    return User.find({}).then((users) => {
-      try {
-        getNumbersToPush(users).forEach(({ phoneNumber, username }) => {
-          // send push notification
-          console.log(phoneNumber);
-          const pushMessage = getFormattedPushMessage(username);
-          client.messages.create({ from: HYDROPONICS_WA_NUMBER, to: phoneNumber, body: pushMessage }).then((message) => {
-            console.log('Message sent.');
-            User.findOneAndUpdate({ phoneNumber }, { lastReceivedPush: new Date() }, { new: true, upsert: true }).then((user) => {
-              // console.log('User document has been updated: ', user);
+    return User.find({})
+      .populate('messageHistory')
+      .then((users) => {
+        try {
+          getNumbersToPush(users).forEach(({ phoneNumber, username }) => {
+            // send push notification
+            console.log(phoneNumber);
+            const pushMessage = getFormattedPushMessage(username);
+            client.messages.create({ from: HYDROPONICS_WA_NUMBER, to: phoneNumber, body: pushMessage }).then((message) => {
+              console.log('Message sent.');
+              User.findOneAndUpdate({ phoneNumber }, { lastReceivedPush: new Date() }, { new: true, upsert: true }).then((user) => {
+                // console.log('User document has been updated: ', user);
+              });
             });
+            // send message and add to successfullyPushedNumbers in the then block
           });
-          // send message and add to successfullyPushedNumbers in the then block
-        });
-      } catch (err) {
-        console.log(err);
-        logError(err);
-      }
-    });
+        } catch (err) {
+          console.log(err);
+          logError(err);
+        }
+      });
   },
   (err) => {
     if (err.timeBoundaryRejection) return;
