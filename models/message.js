@@ -48,17 +48,17 @@ const messageSchema = new mongoose.Schema({
   healthState: {
     isHealthy: {
       type: String,
-      enum: ['positive', 'likely-positive', 'likely-negative', 'negative', 'uncertain'],
+      enum: ['positive', 'likely-positive', 'likely-negative', 'negative', 'uncertain', null],
       default: null,
     },
     hasPestPresence: {
       type: String,
-      enum: ['positive', 'likely-positive', 'likely-negative', 'negative', 'uncertain'],
+      enum: ['positive', 'likely-positive', 'likely-negative', 'negative', 'uncertain', null],
       default: null,
     },
     hasDeficiencies: {
       type: String,
-      enum: ['positive', 'likely-positive', 'likely-negative', 'negative', 'uncertain'],
+      enum: ['positive', 'likely-positive', 'likely-negative', 'negative', 'uncertain', null],
       default: null,
     },
   },
