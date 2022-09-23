@@ -36,9 +36,9 @@ module.exports.DEFAULT_HELP_MESSAGE =
 module.exports.MAX_SYSTEM_NAME_LENGTH = 20;
 
 module.exports.PROBABILITY = {
-  VERY_LOW: 0.25,
+  VERY_LOW: 0.5,
   LOW: 0.5,
-  HIGH: 0.75,
+  HIGH: 0.85,
 };
 
 module.exports.EMOJI = {

@@ -21,6 +21,7 @@ const LIKELIHOOD = {
  */
 
 const getImageResponseMessage = (plantHealth, systemName) => {
+  if (!plantHealth) return { responseMessage: '', healthState: null };
   const [health, deficiency, pests] = plantHealth;
   const healthState = {};
   const responseSections = {};
