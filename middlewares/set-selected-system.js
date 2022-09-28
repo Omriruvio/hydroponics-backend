@@ -7,7 +7,7 @@ const { sendWhatsappMessage } = require('../utils/send-twilio-message');
 
 module.exports = async (req, res, next) => {
   try {
-    if (req.body.messageBody.startsWith('system')) {
+    if (req.body.messageBody.toLowerCase().startsWith('system')) {
       const { messageBody } = req.body;
       const { phoneNumber } = req.body;
       const systemName = messageBody.split(' ')[1].toLowerCase();
@@ -29,7 +29,7 @@ module.exports = async (req, res, next) => {
           phoneNumber,
           `System "${systemName}" not found in your systems list.\nPlease follow the format: system <system-name> <data>`
         );
-        res.status(204).send({ message: 'System name not found in the user systems' });
+        return res.status(204).send({ message: 'System name not found in the user systems' });
       }
     } else {
       next();
