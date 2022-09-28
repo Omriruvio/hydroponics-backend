@@ -176,8 +176,8 @@ const handleDeleteLast = async (req, res, next) => {
     if (deletedMessage.messageBody) messageResponseSuffix = deletedMessage.messageBody;
     if (deletedMessage.imageUrl) messageResponseSuffix = deletedMessage.imageUrl;
 
-    await sendWhatsappMessage(phoneNumber, 'Your last message was deleted. \n' + messageResponseSuffix);
-    res.status(200).send({ message: 'Your last message was deleted.' });
+    await sendWhatsappMessage(phoneNumber, `*Deleted last message in system - "${deletedMessage.systemName}".*\n` + messageResponseSuffix);
+    res.status(200).send({ message: 'Your last message was deleted.', deletedMessage });
   } catch (err) {
     next(err);
   }

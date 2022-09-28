@@ -107,8 +107,8 @@ messageSchema.statics.deleteLastMessage = async function (userId) {
   if (!user) {
     throw new Error(`Attempted to delete last message from a user id of: ${userId} but user not found`);
   }
-  const lastMessage = await this.findOne({ user: userId }).sort({ dateReceived: -1 });
-  const deletedMessage = await this.findByIdAndDelete(lastMessage?._id);
+  const lastMessageId = String(user.messageHistory[user.messageHistory.length - 1]);
+  const deletedMessage = await this.findByIdAndDelete(lastMessageId);
   return deletedMessage;
 };
 
