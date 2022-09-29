@@ -14,6 +14,7 @@ const {
   handleInviteToCollaborate,
   getUserSystems,
   getDefaultSystem,
+  getUserMessages,
 } = require('../controllers/users');
 const auth = require('../middlewares/auth');
 const handleIfImage = require('../middlewares/check-for-image');
@@ -34,7 +35,8 @@ router.get('/me', auth, handleGetUser);
 router.post('/new-system', handleNewSystem);
 router.get('/get-user-systems', getUserSystems);
 router.get('/get-default-system', getDefaultSystem);
-// get all user systems
+// get all user messages
+router.get('/messages', auth, getUserMessages);
 
 // incoming requests from twilio studio
 router.post('/identify', verifyTwilioRequest, handleTwilioAuth);

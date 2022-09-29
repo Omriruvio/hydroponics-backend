@@ -50,6 +50,16 @@ const handleGetUser = (req, res, next) => {
     .catch(next);
 };
 
+const getUserMessages = async (req, res, next) => {
+  const { _id } = req.user;
+  try {
+    const user = await User.findById(_id).populate('messageHistory');
+    res.send(JSON.stringify(user.messageHistory));
+  } catch (error) {
+    next(error);
+  }
+};
+
 const handleLogin = (req, res, next) => {
   const { email, phoneNumber } = req.body;
   User.findOne({ email })
@@ -416,4 +426,5 @@ module.exports = {
   handleInviteToCollaborate,
   getUserSystems,
   getDefaultSystem,
+  getUserMessages,
 };

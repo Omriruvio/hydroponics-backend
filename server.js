@@ -9,6 +9,7 @@ const incomingRoute = require('./routes/incoming');
 const userRoute = require('./routes/userrouter');
 const superRoute = require('./routes/superrouter');
 const systemRoute = require('./routes/systemrouter');
+const messageRoute = require('./routes/messagerouter');
 const cors = require('cors');
 const { rateLimiter } = require('./middlewares/ratelimiter.js');
 const { scheduler, pollForPushNotification } = require('./utils/tasks/poll-inactive-users');
@@ -30,7 +31,7 @@ app.get('/', (req, res) => {
   res.send('<h1>Hello from Hydroponics!</h1>');
 });
 
-app.use('/', incomingRoute, userRoute, superRoute, systemRoute);
+app.use('/', incomingRoute, userRoute, superRoute, systemRoute, messageRoute);
 
 app.use('*', (req, res) => {
   res.status(404).send({ message: 'Resource not found' });
