@@ -48,4 +48,21 @@ const handleMessageUpdate = async (req, res, next) => {
   }
 };
 
-module.exports = { handleMessageUpdate };
+const handleDeleteMessage = async (req, res, next) => {
+  try {
+    const userId = req.user._id;
+    const { messageId } = req.body;
+    const message = await Message.findByIdAndDelete(messageId);
+    const system = await System.findById(message.system);
+    system.messageHistory = system.messageHistory.filter((messageId) => String(messageId) !== String(message._id));
+    await system.save();
+    const user = await User.findById(userId);
+    user.messageHistory = user.messageHistory.filter((messageId) => String(messageId) !== String(message._id));
+    await user.save();
+    res.status(200).send({ message: 'Message deleted' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { handleMessageUpdate, handleDeleteMessage };
