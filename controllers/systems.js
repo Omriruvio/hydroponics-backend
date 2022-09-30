@@ -64,7 +64,7 @@ const renameSystem = async (req, res, next) => {
     const { phoneNumber, messageBody } = req.body;
     const user = await User.findOne({ phoneNumber });
 
-    if (messageBody.startsWith('rename')) {
+    if (messageBody.toLowerCase().startsWith('rename')) {
       const oldSystemName = messageBody.split(' ')[1]?.toLowerCase();
       const newSystemName = messageBody.split(' ')[2]?.toLowerCase();
 
