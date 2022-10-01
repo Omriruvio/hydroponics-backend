@@ -21,16 +21,16 @@ module.exports.DEFAULT_HELP_MESSAGE =
   `'*_temp_* value *_ph_* value *_ec_* value'\n\n` +
   `You may send photos of your crop which will be analyzed and provide instant feedback regarding health, deficiencies and pest presence.\n` +
   `\n*Additional commands:*\n` +
-  `*'help'* - For this reference sheet\n` +
+  // `*'help'* - For this reference sheet\n` +
   `*'dash/dashboard'* - Provides a link to your dashboard\n` +
   `*'delete'* - Remove latest crop data submission\n` +
   `*'create system <system-name>'* - Create a new system\n` +
   `*'system <system-name> <data>'* - Submit crop data for a specific system\n` +
   `*'default system <system-name>'* - Set a default system for crop data submission\n` +
-  `*'rename <system-name> <new-system-name>'* - Rename a system\n` +
-  `*'set public <system-name>'* - Set a system to be public\n` +
-  `*'set private <system-name>'* - Set a system to be private\n` +
-  `*'my systems'* - List all your systems\n` +
+  // `*'rename <system-name> <new-system-name>'* - Rename a system\n` +
+  // `*'set public <system-name>'* - Set a system to be public\n` +
+  // `*'set private <system-name>'* - Set a system to be private\n` +
+  // `*'my systems'* - List all your systems\n` +
   `*'profile'* - View your profile information\n`;
 
 module.exports.MAX_SYSTEM_NAME_LENGTH = 20;
