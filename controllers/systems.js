@@ -271,6 +271,21 @@ const getSystem = async (req, res, next) => {
   }
 };
 
+const createSystem = async (req, res, next) => {
+  try {
+    const { name, isPublic, isDefault } = req.body;
+    const user = await User.findById(req.user._id);
+    const system = await System.createSystem(user._id, name, isPublic);
+    if (isDefault) {
+      await User.setDefaultSystem(user.phoneNumber, system._id);
+    }
+    res.status(200).send({ system });
+  } catch (error) {
+    res.status(500).send({ message: 'System creation failed' });
+    next(error);
+  }
+};
+
 module.exports = {
   addUserToSystem,
   removeUserFromSystem,
@@ -281,4 +296,5 @@ module.exports = {
   getSystem,
   webRenameSystem,
   webSetSystemAccess,
+  createSystem,
 };

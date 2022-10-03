@@ -88,7 +88,7 @@ systemSchema.post('save', function (doc, next) {
 //   console.log(arrayOfSystemNames);
 // })();
 
-systemSchema.statics.createSystem = async function (userId, name) {
+systemSchema.statics.createSystem = async function (userId, name, isPublic) {
   const User = require('./user');
   const user = await User.findById(userId);
   if (!user) {
@@ -113,6 +113,7 @@ systemSchema.statics.createSystem = async function (userId, name) {
     owner: userId,
     ownerName: user.username,
     ownerPhoneNumber: user.phoneNumber,
+    isPublic,
   });
   user.systems.push(system._id);
   await user.save();

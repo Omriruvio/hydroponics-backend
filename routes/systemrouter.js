@@ -9,6 +9,7 @@ const {
   getSystem,
   webRenameSystem,
   webSetSystemAccess,
+  createSystem,
 } = require('../controllers/systems');
 const auth = require('../middlewares/auth');
 const { verifyTwilioRequest } = require('../middlewares/validate-twilio-request');
@@ -19,6 +20,7 @@ router.get('/get-system-users/:systemId', getSystemUsers);
 router.get('/system/get', getSystem);
 router.patch('/system/:systemId', auth, webRenameSystem);
 router.patch('/system/set-access/:systemId', auth, webSetSystemAccess);
+router.post('/system/create', auth, createSystem);
 
 // mobile interface routes
 router.post('/system/mobile/rename', verifyTwilioRequest, renameSystem);
