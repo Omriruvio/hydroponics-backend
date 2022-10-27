@@ -34,3 +34,18 @@ module.exports.getNumbersToPush = (users) => {
     return numbersToNotify;
   }, []);
 };
+
+module.exports.getTotalActiveUsers = (users) => {
+  const now = new Date();
+  return users.reduce((totalActiveUsers, user) => {
+    const lastSentMessage = user.messageHistory.at(-1);
+    let isActive;
+    if (!lastSentMessage) isActive = false;
+    else {
+      const lastSentMessageTime = lastSentMessage.dateReceived || null;
+      isActive = getDaysBetween(lastSentMessageTime, now) < PUSH_MIN_DELAY_DAYS;
+    }
+    if (isActive) totalActiveUsers++;
+    return totalActiveUsers;
+  }, 0);
+};

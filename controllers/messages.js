@@ -65,4 +65,24 @@ const handleDeleteMessage = async (req, res, next) => {
   }
 };
 
-module.exports = { handleMessageUpdate, handleDeleteMessage };
+const getLastXMessagesWithPhoto = async (req, res, next) => {
+  // get amount of messages to return from req.body
+  try {
+    const { amount } = req.body;
+    const messages = await Message.getLastXMessagesWithPhoto(amount);
+    res.status(200).send(messages);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getAverageMetrics = async (req, res, next) => {
+  try {
+    const averages = await Message.getAverages();
+    res.status(200).send(averages);
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { handleMessageUpdate, handleDeleteMessage, getLastXMessagesWithPhoto, getAverageMetrics };

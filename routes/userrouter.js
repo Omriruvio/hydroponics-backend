@@ -15,6 +15,7 @@ const {
   getUserSystems,
   getDefaultSystem,
   getUserMessages,
+  getActiveUserCount,
 } = require('../controllers/users');
 const auth = require('../middlewares/auth');
 const handleIfImage = require('../middlewares/check-for-image');
@@ -35,6 +36,8 @@ router.get('/me', auth, handleGetUser);
 router.post('/new-system', handleNewSystem);
 router.get('/get-user-systems', getUserSystems);
 router.get('/get-default-system', getDefaultSystem);
+router.get('/active-user-count', getActiveUserCount);
+
 // get all user messages
 router.get('/messages', auth, getUserMessages);
 

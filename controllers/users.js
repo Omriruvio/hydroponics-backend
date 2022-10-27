@@ -13,6 +13,7 @@ const { sendWhatsappMessage } = require('../utils/send-twilio-message');
 const createProfileMessage = require('../utils/create-profile-message');
 const getWhatsappNumber = require('../utils/get-whatsapp-number');
 const getInviteMessage = require('../utils/get-invite-message');
+const { getTotalActiveUsers } = require('../utils/get-numbers-to-push');
 
 const handleSignup = (req, res, next) => {
   // todo - make frontend force submitting username
@@ -409,6 +410,17 @@ const getDefaultSystem = async (req, res, next) => {
   }
 };
 
+const getActiveUserCount = async (req, res, next) => {
+  try {
+    const users = await User.find({});
+    const activeUsers = getTotalActiveUsers(users);
+    console.log(activeUsers);
+    res.status(200).send({ activeUsers });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   handleHistoryRequest,
   handleTwilioAuth,
@@ -427,4 +439,5 @@ module.exports = {
   getUserSystems,
   getDefaultSystem,
   getUserMessages,
+  getActiveUserCount,
 };
