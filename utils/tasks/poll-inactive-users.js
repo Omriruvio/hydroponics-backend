@@ -16,6 +16,7 @@ const task = new AsyncTask(
     // only execute between hours set in /config.js
     // and between monday - thursday
     if (!isPushTimeEligible()) {
+      console.log('Not eligible to send push notifications at this time');
       return Promise.reject({ timeBoundaryRejection: true });
     }
     // todo: consider increasing push interval by applying 7 days * pushNotificationsSent + 1
@@ -28,12 +29,18 @@ const task = new AsyncTask(
             // send push notification
             console.log(phoneNumber);
             const pushMessage = getFormattedPushMessage(username);
-            client.messages.create({ from: HYDROPONICS_WA_NUMBER, to: phoneNumber, body: pushMessage }).then((message) => {
-              console.log('Message sent.');
-              User.findOneAndUpdate({ phoneNumber }, { lastReceivedPush: new Date() }, { new: true, upsert: true }).then((user) => {
-                // console.log('User document has been updated: ', user);
+            // if NODE_ENV === 'DEV' return
+            if (NODE_ENV === 'DEV') {
+              console.log(`Push notification to user ${username} at ${phoneNumber}: ${pushMessage}`);
+              return;
+            } else {
+              client.messages.create({ from: HYDROPONICS_WA_NUMBER, to: phoneNumber, body: pushMessage }).then((message) => {
+                console.log('Message sent.');
+                User.findOneAndUpdate({ phoneNumber }, { lastReceivedPush: new Date() }, { new: true, upsert: true }).then((user) => {
+                  // console.log('User document has been updated: ', user);
+                });
               });
-            });
+            }
             // send message and add to successfullyPushedNumbers in the then block
           });
         } catch (err) {

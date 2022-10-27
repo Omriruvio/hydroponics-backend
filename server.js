@@ -49,7 +49,7 @@ app.use((err, req, res, next) => {
 
 if (NODE_ENV !== 'test') {
   // schedules push notification to inactive users
-  NODE_ENV !== 'DEV' && scheduler.addSimpleIntervalJob(pollForPushNotification);
+  scheduler.addSimpleIntervalJob(pollForPushNotification);
   app.listen(port, () => {
     console.log(`Hydroponics app listening at ${port}`);
   });

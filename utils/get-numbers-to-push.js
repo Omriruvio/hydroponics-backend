@@ -20,8 +20,6 @@ module.exports.getNumbersToPush = (users) => {
     const lastReceivedPush = user.lastReceivedPush;
     const delayHasPassed = lastReceivedPush ? getDaysBetween(lastReceivedPush, now) >= PUSH_MIN_DELAY_DAYS : true;
     const lastSentMessage = user.messageHistory.at(-1);
-    console.log(`Checking user: ${user.username}`);
-    console.log(`Last sent message at: ${lastSentMessage?.dateReceived || null}`);
     let isInactive;
     if (!lastSentMessage) isInactive = true;
     else {
@@ -31,6 +29,11 @@ module.exports.getNumbersToPush = (users) => {
     if (acceptsReminders && delayHasPassed && isInactive) {
       numbersToNotify.push({ phoneNumber: user.phoneNumber, username: user.username || 'user' });
     }
+    // console.log(`Checking user: ${user.username}`);
+    // console.log(`Delay has ${delayHasPassed ? 'passed' : 'not passed'} for user ${user.username}`);
+    // console.log(`Last sent message at: ${lastSentMessage?.dateReceived || null}`);
+    // console.log(`Reminders are ${acceptsReminders ? 'accepted' : 'not accepted'} for user ${user.username}`);
+    // console.log(numbersToNotify);
     return numbersToNotify;
   }, []);
 };
