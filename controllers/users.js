@@ -226,7 +226,7 @@ const handleHistoryRequest = (req, res, next) => {
     // receives whatsapp number, to date, number of days to go back, and optional systemId (otherwise defaults to default system)
     User.getMessageHistoryFrom(whatsappConvertedNumber, toDate, dayCount, systemId)
       .then((history) => {
-        if (history.length === 0) res.status(204).send();
+        if (!history || history.length === 0) return res.status(200).send([]);
         else res.send(history);
       })
       .catch(next);
@@ -414,7 +414,6 @@ const getActiveUserCount = async (req, res, next) => {
   try {
     const users = await User.find({});
     const activeUsers = getTotalActiveUsers(users);
-    console.log(activeUsers);
     res.status(200).send({ activeUsers });
   } catch (err) {
     next(err);

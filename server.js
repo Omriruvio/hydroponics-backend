@@ -15,9 +15,7 @@ const { rateLimiter } = require('./middlewares/ratelimiter.js');
 const { scheduler, pollForPushNotification } = require('./utils/tasks/poll-inactive-users');
 const logError = require('./utils/errors/log-error');
 
-// todo: add cookie parser
-
-app.use(rateLimiter);
+NODE_ENV !== 'DEV' && app.use(rateLimiter);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());

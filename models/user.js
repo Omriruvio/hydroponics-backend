@@ -78,7 +78,7 @@ userSchema.statics.getMessageHistoryFrom = async function (phoneNumber, toDate, 
   // if no systemId is provided, return all user messages from user messageHistory
   if (!systemId) {
     const user = await this.findOne({ phoneNumber }).populate('messageHistory');
-    if (!user) throw new Error('User not found');
+    if (!user) return null;
     return user.messageHistory.filter(inDateRange);
   }
 
